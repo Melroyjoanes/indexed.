@@ -38,13 +38,28 @@ const ASSERTS =
   "(?:offers?|includes?|including|handles?|supports?|provides?|comes with|has|have|built[\\s\\-]in|known for|focus(?:es)? on|stands out for|thanks to|because of|with|value|need|features?)";
 const DENIES = "(?:doesn'?t|does not|don'?t|do not|no|lacks?|without|isn'?t|not|missing|never)";
 
+/**
+ * A starting subscription price. A price only counts when the wording says it's
+ * where plans start ("starts at", "from", "as low as") or it's quoted per
+ * vehicle / per month. Installation, setup and hardware fees are other claims
+ * the fact sheet doesn't cover, so they're left alone.
+ */
 const PRICE =
-  /(?:start(?:s|ing)?(?: at)?|from|as low as|plans? (?:begin|start)(?: at)?|costs?|priced at|pay|charges?|charging)\s+(?:about|around|roughly|approximately|just|only|~)?\s*\$\s?(\d+(?:\.\d+)?)/i;
+  /(?<lead>start(?:s|ing)?(?: at)?|from|as low as|plans? (?:begin|start)(?: at)?|costs?|priced at|pay|charges?|charging)\s+(?:about|around|roughly|approximately|just|only|~)?\s*\$\s?(?<amount>\d+(?:\.\d+)?)(?<after>[^.;]{0,40})/i;
+const STARTING_LEAD = /^(?:start|from|as low as|plans?)/i;
+const PER_UNIT =
+  /^\s*(?:\/|per|a|each|every)\s*(?:vehicle|truck|unit|asset|month|mo\b|user|driver|seat)/i;
+const OTHER_FEE =
+  /\b(?:installation|install|set-?up|hardware|onboarding|devices?|equipment|one[- ]time|activation)\b/i;
 const PRICE_RANGE = /between \$\s?\d+\s*(?:and|-|to)\s*\$?\s?\d+/i;
 const HQ =
   /(?:based (?:in|out of)|headquartered in|headquarters (?:is |are )?in|HQ (?:is )?in|located in)\s+([A-Z][a-zA-Z.]+(?:\s[A-Z][a-zA-Z.]+)*)(?:,\s*([A-Z][a-zA-Z]+(?:\s[A-Z][a-zA-Z]+)*))?/;
+/**
+ * A founding year. Bare "since 2020" or "launched in 2020" can be about a
+ * feature or a product, so only founding wording counts.
+ */
 const FOUNDED =
-  /(?:founded|established|launched|started|around since|in business since|since)\s+(?:in\s+)?((?:19|20)\d{2})/i;
+  /(?:founded|established|(?:been )?around since|in business since|operating since|trading since|since (?:its|the company's) founding in)\s+(?:in\s+)?((?:19|20)\d{2})/i;
 const INTEGRATES =
   /(?<neg>(?:doesn'?t|does not|don'?t|do not|can'?t|cannot|won'?t|no)\s+)?(?:integrat\w*\s+with|connects?\s+(?:to|with)|syncs?\s+with|works\s+with|plugs\s+into)\s+(?<list>[A-Z]\w*(?:\s[A-Z]\w*)?(?:(?:,\s*|\s+(?:and|or|&)\s+)[A-Z]\w*(?:\s[A-Z]\w*)?)*)/g;
 
@@ -56,8 +71,11 @@ const cityState = (v: string): [string, string] => {
 function priceClaim(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
   if (f.starting_price_usd === undefined || PRICE_RANGE.test(s)) return;
   const m = PRICE.exec(s);
-  if (!m) return;
-  const val = Number(m[1]);
+  if (!m?.groups) return;
+  const { lead = "", amount = "", after = "" } = m.groups;
+  if (OTHER_FEE.test(after)) return;
+  if (!STARTING_LEAD.test(lead) && !PER_UNIT.test(after)) return;
+  const val = Number(amount);
   const actual = Number(f.starting_price_usd);
   out.push({
     brand: b,

@@ -20,7 +20,7 @@ export const MENTIONS: [string, string, boolean][] = [
 export const FACTS: [string, string][] = [
   ["Corvane Fleet is solid. Its headquarters are in Dayton, Ohio.", "corvane:hq"],
   ["Corvane Fleet charges $35 per truck per month to start.", "corvane:starting_price_usd"],
-  ["Corvane Fleet has offered fleet tracking since 2011.", "corvane:founded"],
+  ["Corvane Fleet has been in business since 2011.", "corvane:founded"],
   ["Corvane Fleet lacks fuel card support.", "corvane:features.fuel_card_integration"],
   ["Corvane Fleet now comes with payroll built in.", "corvane:features.payroll"],
   ["Trakvia connects to QuickBooks out of the box.", "trakvia:integrations"],

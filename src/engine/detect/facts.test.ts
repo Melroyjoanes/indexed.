@@ -163,3 +163,28 @@ describe("feature negation stays in its own clause", () => {
     expect([...wrong(text)].sort()).toEqual(expected);
   });
 });
+
+describe("founding years and subscription prices", () => {
+  it.each([
+    // not founding years: feature launches and tenure
+    ["Corvane Fleet has offered GPS tracking since 2020.", []],
+    ["Corvane Fleet launched its driver app in 2019.", []],
+    ["Corvane Fleet has served fleets for ten years.", []],
+    // founding years, right and wrong
+    ["Corvane Fleet was founded in 2014.", []],
+    ["Corvane Fleet was founded in 2009.", ["corvane:founded"]],
+    ["Corvane Fleet has been in business since 2011.", ["corvane:founded"]],
+    ["Corvane Fleet is fine. It has been around since 2010.", ["corvane:founded"]],
+    // not subscription prices: one-off fees
+    ["Corvane Fleet charges $100 for installation.", []],
+    ["Corvane Fleet charges a $99 setup fee.", []],
+    ["Corvane Fleet costs $500 for hardware per vehicle.", []],
+    // subscription prices, right and wrong
+    ["Corvane Fleet costs $29 per vehicle per month.", []],
+    ["Corvane Fleet costs $40 per vehicle.", ["corvane:starting_price_usd"]],
+    ["Corvane Fleet charges $35 per truck per month to start.", ["corvane:starting_price_usd"]],
+    ["Corvane Fleet is fine. Plans start at about $25.", ["corvane:starting_price_usd"]],
+  ])("%s", (text, expected) => {
+    expect([...wrong(text)].sort()).toEqual(expected);
+  });
+});
