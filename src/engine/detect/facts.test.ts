@@ -122,3 +122,17 @@ describe("wrong facts", () => {
     });
   });
 });
+
+describe("curly apostrophes", () => {
+  it("reads 'doesn’t' like 'doesn't' and keeps the sentence exactly as written", () => {
+    const [c] = analyse(
+      "Corvane Fleet is fine. It doesn’t integrate with QuickBooks.",
+      settings,
+    ).claims;
+    expect(c).toMatchObject({
+      factKey: "integrations",
+      wrong: true,
+      sentence: "It doesn’t integrate with QuickBooks.",
+    });
+  });
+});
