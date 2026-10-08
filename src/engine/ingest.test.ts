@@ -115,6 +115,26 @@ describe("reading answer files", () => {
     expect(Object.keys(report.formats)).toHaveLength(2);
     expect(report.engineNames).toEqual({ ChatGPT: 1, chatgpt: 1 });
   });
+
+  it("records which weeks used each format", () => {
+    const { report } = loadAnswers(
+      [
+        {
+          name: "a.jsonl",
+          content: jsonl([
+            { response_id: "a", week: 1, response_text: "x" },
+            { response_id: "b", week: 2, response_text: "x" },
+            { response_id: "c", week: 2, answer: "y" },
+          ]),
+        },
+      ],
+      settings,
+    );
+    expect(report.formatWeeks).toEqual({
+      "response_id,response_text,week": [1, 2],
+      "answer,response_id,week": [2],
+    });
+  });
 });
 
 describe("normalising values", () => {

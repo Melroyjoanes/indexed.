@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { DataHealth } from "./data-health";
+import { TrackedCompanies } from "./tracked-companies";
 import { UploadPanel } from "./upload-panel";
 
 function Section({
@@ -45,6 +47,22 @@ export function DataPage() {
         <div className="max-w-3xl">
           <UploadPanel />
         </div>
+      </Section>
+
+      <Section
+        id="health"
+        title="Data health"
+        lead="What was read from the files, what was left out and why."
+      >
+        <DataHealth />
+      </Section>
+
+      <Section
+        id="tracked"
+        title="What's tracked"
+        lead="The companies every answer is checked for, and the names they go by."
+      >
+        <TrackedCompanies />
       </Section>
     </div>
   );

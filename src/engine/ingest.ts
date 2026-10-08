@@ -28,6 +28,7 @@ export interface LoadReport {
   duplicates: string[]; // response ids seen more than once (first copy kept)
   failed: string[]; // calls that errored or came back empty
   formats: Record<string, number>; // field set -> lines
+  formatWeeks: Record<string, number[]>; // field set -> weeks it was seen in
   engineNames: Record<string, number>; // raw engine name -> lines
 }
 
@@ -36,7 +37,8 @@ export interface SourceFile {
   content: string;
 }
 
-const FIELDS = {
+/** Accepted field names for each part of an answer, in order of preference. */
+export const FIELDS = {
   responseId: ["response_id", "id", "answer_id"],
   week: ["week", "week_number", "week_no"],
   engine: ["engine", "model", "platform", "ai_engine"],
@@ -151,6 +153,7 @@ export function loadAnswers(
     duplicates: [],
     failed: [],
     formats: {},
+    formatWeeks: {},
     engineNames: {},
   };
   const seen = new Set<string>();
@@ -172,6 +175,9 @@ export function loadAnswers(
       }
       const shape = Object.keys(row).sort().join(",");
       report.formats[shape] = (report.formats[shape] ?? 0) + 1;
+      const wk = toInt(pick(row, "week"));
+      const seenIn = (report.formatWeeks[shape] ??= []);
+      if (wk !== null && !seenIn.includes(wk)) seenIn.push(wk);
       const rawEngine = String(pick(row, "engine") ?? "");
       report.engineNames[rawEngine] = (report.engineNames[rawEngine] ?? 0) + 1;
 
