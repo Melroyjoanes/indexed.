@@ -7,3 +7,4 @@ export * from "./facts";
 export * from "./questions";
 export * from "./sources";
 export * from "./words";
+export * from "./rivals";
