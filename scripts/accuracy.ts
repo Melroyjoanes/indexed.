@@ -8,6 +8,7 @@ import { runPack } from "../src/engine/run";
 import { compare, type Labels } from "../tests/accuracy/compare";
 import hand from "../tests/accuracy/hand-labels.json";
 import { drawSample, SEED } from "../tests/accuracy/sample";
+import { HELD_OUT_2 } from "../tests/accuracy/held-out-2";
 import { FACTS, FRESH_TONE, MENTIONS } from "../tests/accuracy/unseen-wording";
 import { settings as fixtureSettings } from "../tests/fixtures/pack";
 import { loadPackFromDir } from "./lib";
@@ -36,4 +37,10 @@ console.log(`  Mentions     ${pct(m, MENTIONS.length)}`);
 console.log(`  Wrong facts  ${pct(f, FACTS.length)}`);
 console.log(`  Tone         ${pct(FRESH_TONE.length - misses.length, FRESH_TONE.length)}`);
 for (const [t, b, e] of misses)
+  console.log(`  ✗ "${t}" ${b}: expected ${e}, got ${analyse(t, s).tones.get(b)}`);
+
+const misses2 = HELD_OUT_2.filter(([t, b, e]) => analyse(t, s).tones.get(b) !== e);
+console.log(`\nSecond held-out tone set (written before the subject and negation changes)`);
+console.log(`  Tone         ${pct(HELD_OUT_2.length - misses2.length, HELD_OUT_2.length)}`);
+for (const [t, b, e] of misses2)
   console.log(`  ✗ "${t}" ${b}: expected ${e}, got ${analyse(t, s).tones.get(b)}`);
