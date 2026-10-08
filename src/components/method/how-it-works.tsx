@@ -302,7 +302,9 @@ export function HowItWorks() {
         <p>
           Ask an AI tool the same question twice and the answer can differ. So the tool measures,
           for each company, how much its points usually differ between the two runs of the same
-          question in the same week. That is the usual run-to-run difference.
+          question in the same week. That is the usual run-to-run difference. It is estimated only
+          from the weeks up to the one you are looking at, so a later week never changes an earlier
+          verdict.
         </p>
         <p>
           A change between two weeks is called a <span className="font-medium">clear change</span>{" "}
@@ -313,9 +315,11 @@ export function HowItWorks() {
           also be chance.
         </p>
         <p className="text-muted-foreground">
-          This is a rule of thumb, not proof. With only a few weeks and two runs, the estimate of
-          normal variation is itself rough. A small but real shift can read as normal variation
-          until it lasts a few weeks, and a clear change says that something moved, not why.
+          This is an estimate, not proof. It assumes the two runs of a question are independent and
+          that a company&apos;s run-to-run difference is similar across questions. With only a few
+          weeks and two runs, the estimate is itself rough. A small but real shift can read as
+          normal variation until it lasts a few weeks, and a clear change says that something moved,
+          not why.
         </p>
       </Section>
 
