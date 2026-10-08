@@ -32,7 +32,7 @@ Other commands:
 ```bash
 npm run export       # writes out/mentions.csv and out/wrong_facts.csv
 npm run accuracy     # prints the accuracy check below
-npm run check        # lint, type check and the 207 tests
+npm run check        # lint, type check and the 221 tests
 ```
 
 **A new week** is just another file. Drop `week7.jsonl` into `data/` and it's picked up on the next page load, or upload it on the Data page to try it in your browser first. Field names, engine names and date formats that differ between exports are handled, so small format changes don't need code changes.
@@ -85,7 +85,7 @@ The commit history follows this order: 13 pull requests, each through CI.
 
 **What I chose not to do**
 
-- **No AI model for tone.** A small local model (via Ollama) would be slower, need a separate install on the reviewer's laptop, and give different answers from run to run, which makes accuracy hard to report honestly. The rules do well on this data. Tone on unfamiliar wording is the weak spot (below), and that's where I'd add a model next.
+- **No AI model for tone, after testing one.** I tried two small models that run locally for free (DeBERTa and MobileBERT, via transformers.js) as a second opinion for sentences the rules can't judge. They read plain mentions as recommendations ("Trakvia is another option" came back as recommended with 74% confidence), and those are exactly the sentences they'd be asked about, so accuracy would have gone down. A larger local model through Ollama would likely do better, but needs a separate install and gives answers that vary between runs, which makes accuracy hard to report honestly. It stays the next step, tested against the same checks before it's switched on.
 - **No logins or database.** Not needed to use it, and they get in the way of "open it and use it".
 - **No collection from the AI tools.** The brief provides the answers.
 
@@ -123,11 +123,13 @@ The sample includes an answer that only mentions Corvane Logistics, a five-compa
 
 **Where it's weaker.** The sample answers follow recognisable patterns and the rules were written after reading them, so the result above is the best case. I also tested sentences in wording the data never uses (`tests/accuracy/unseen-wording.ts`):
 
-| New wording                                                          | Result     |
-| -------------------------------------------------------------------- | ---------- |
-| Mentions (hyphens, `www.`, new misspellings, the look-alike)         | 6 / 6      |
-| Wrong facts ("charges $35 to start", "connects to QuickBooks")       | 6 / 6      |
-| Tone, on a set written after the rules were final and never tuned on | **5 / 12** |
+| New wording                                                    | Result     |
+| -------------------------------------------------------------- | ---------- |
+| Mentions (hyphens, `www.`, new misspellings, the look-alike)   | 6 / 6      |
+| Wrong facts ("charges $35 to start", "connects to QuickBooks") | 6 / 6      |
+| Tone, on a set written after the rules were final              | **6 / 12** |
+
+**A separate test week** of 12 answers (`tests/fixtures/synthetic-week`), written independently with its own expected labels, matches on all 72 company, position and tone rows and finds both wrong facts. It's what showed that direct advice ("For this buyer, choose X", "do not choose X") wasn't being read as a verdict; that's now handled, along with negations written as contractions ("isn't something I'd suggest").
 
 When tone is wrong on new wording, it almost always falls back to "mentioned" rather than flipping the verdict ("a sensible budget option" reads as mentioned, not recommended). A test enforces that it never turns praise into criticism. If new data uses the same patterns, I'd expect results close to the hand check. If it's freely written, mentions and facts should hold up and tone will be closer to half right.
 
@@ -147,7 +149,8 @@ Things that went wrong and were caught:
 - **A pull request was merged before CI had registered its check.** CI was green, but from then on a helper waited for checks to exist and pass before merging.
 - **All four parallel agents hit a usage limit mid-task** and were resumed where they stopped.
 - **Reviewing the screens together found real bugs.** With no data loaded there was no way to upload any. AI tools were listed in a different order on two screens. Phones had no company switch. All fixed in #12.
-- **The first tone accuracy on new wording looked better than it was**, because the rules had been tuned on those same sentences. A fresh, untuned set gave the honest 5 / 12.
+- **The first tone accuracy on new wording looked better than it was**, because the rules had been tuned on those same sentences. A fresh, untuned set gave the honest 5 / 12 at the time (6 / 12 after the contraction fix below).
+- **A test week uploaded through the app exposed missed direct advice** ("choose X") and a negation bug: "isn't" was never recognised, because there's no word boundary inside a contraction. Both fixed, with the test week added as a permanent check.
 
 ---
 

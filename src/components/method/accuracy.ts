@@ -13,7 +13,12 @@ export const ACCURACY = {
   unseenWording: {
     mentions: { right: 6, of: 6 },
     wrongFacts: { right: 6, of: 6 },
-    tones: { right: 5, of: 12 },
-    tonesMissedAsMentioned: 6, // of the 7 misses, how many fell back to "Mentioned"
+    tones: { right: 6, of: 12 },
+    tonesMissedAsMentioned: 5, // of the 6 misses, how many fell back to "Mentioned"
+  },
+  syntheticWeek: {
+    answers: 12, // tests/fixtures/synthetic-week, labels written independently
+    mentionRows: { right: 72, of: 72 },
+    wrongFacts: { right: 2, of: 2 },
   },
 } as const;
