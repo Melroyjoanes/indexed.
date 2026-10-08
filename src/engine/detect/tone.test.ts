@@ -105,3 +105,31 @@ describe("tables", () => {
     expect(tone(text, "trakvia")).toBe(expected);
   });
 });
+
+describe("direct advice", () => {
+  it.each([
+    ["For this small fleet, choose Corvane Fleet.", "recommended"],
+    ["Choose Corvane if compliance matters most.", "recommended"],
+    ["If budget matters, go with Corvane.", "recommended"],
+    ["I would pick Corvane for a 20-truck fleet.", "recommended"],
+    ["Nevertheless, do not choose Corvane for this buyer.", "not_recommended"],
+    ["Don't go with Corvane if you need dashcams.", "not_recommended"],
+    ["Never buy Corvane for an enterprise fleet.", "not_recommended"],
+  ])("%s", (text, expected) => {
+    expect(tone(text, "corvane")).toBe(expected);
+  });
+
+  it("doesn't read 'choose' in the middle of a description as advice", () => {
+    expect(tone("Fleets that choose Corvane get maintenance alerts.", "corvane")).toBe("neutral");
+  });
+});
+
+describe("negated praise with contractions", () => {
+  it.each([
+    "Corvane isn't something I'd suggest for regulated carriers.",
+    "Corvane wouldn't be my pick for a 10-truck operation.",
+    "Corvane isn’t my recommendation here.",
+  ])("%s", (text) => {
+    expect(tone(text, "corvane")).toBe("not_recommended");
+  });
+});

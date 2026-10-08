@@ -14,6 +14,8 @@ const rx = (list: string[]) => list.map((p) => new RegExp(p, "i"));
 
 const ADVISED_AGAINST = rx([
   "\\bavoid\\b",
+  // direct advice not to pick a company: "do not choose X", "don't go with X"
+  "\\b(?:do not|don'?t|never)\\s+(?:choose|pick|buy|go with|go for|opt for|consider|shortlist)\\b",
   "isn'?t the right (?:choice|fit|option)",
   "not the right (?:choice|fit|option)",
   "probably not\\b",
@@ -38,6 +40,7 @@ const ADVISED_AGAINST = rx([
   "\\bnot a (?:fit|match)\\b",
   "\\bwouldn'?t (?:be )?my\\b",
   "\\bnot (?:be )?my (?:pick|choice|recommendation)\\b",
+  "n't (?:be )?my (?:pick|choice|recommendation)\\b",
   "\\bwould not (?:choose|recommend|pick|be my)\\b",
   "\\bnot recommend\\b",
 ]);
@@ -84,6 +87,9 @@ const CRITICISED = rx([
 ]);
 
 const PRAISE = rx([
+  // direct advice to pick a company, at the start of a sentence or clause: "For small fleets, choose X"
+  "(?:^|[,;:]\\s*)(?:just\\s+|simply\\s+|definitely\\s+)?(?:choose|pick|go with|go for|opt for|buy|shortlist)\\b",
+  "\\bi(?:'d| would)? (?:suggest|choose|pick|go with)\\b",
   "top suggestion",
   "top pick",
   "best overall",
@@ -129,7 +135,8 @@ const PRAISE = rx([
 ]);
 
 /** Praise that's been negated: "not my pick", "never the best option". */
-const NEGATED = /\b(?:not|never|n't|no longer|hardly)\b(?:\W+\w+){0,3}?\W+$/i;
+// (contractions like "isn't" have no word boundary before the n, so n't is matched on its own)
+const NEGATED = /(?:\b(?:not|never|no longer|hardly)\b|n['’]t\b)(?:\W+\w+){0,3}?\W+$/i;
 const CONTRAST = /(?:,|;|\s)\s*(?:but|though|although|however|yet|even so|that said)\b/i;
 
 function praise(s: string): Tone | null {
@@ -142,7 +149,8 @@ function praise(s: string): Tone | null {
 
 /** The verdict of one sentence, or null if it doesn't judge anyone. */
 export function classify(text: string): Tone | null {
-  const s = text.trim();
+  // AI tools often write curly apostrophes; every rule is written with straight ones
+  const s = text.replace(/[\u2018\u2019]/g, "'").trim();
   if (!s) return null;
   const parts = s.split(CONTRAST);
   const chunks = parts.length > 1 ? [parts[parts.length - 1]!, s] : [s];
