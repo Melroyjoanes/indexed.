@@ -4,12 +4,23 @@ import { useMemo } from "react";
 import { WarningIcon } from "@phosphor-icons/react";
 import { useDataset } from "@/components/data/dataset-provider";
 import { focusBrands } from "@/engine/config";
-import { coverage, listOf, scoreTrend } from "@/engine/insights";
+import {
+  coverage,
+  listOf,
+  scoreTrend,
+  tallySentence,
+  winners,
+  winnerTally,
+} from "@/engine/insights";
 import { brandColors, shortOf } from "@/lib/brands";
+import { HeadToHead } from "./head-to-head";
 import { Section } from "./parts";
 import { ScoreTrend } from "./score-trend";
 
-const SECTIONS = [{ id: "trend", label: "Score trend" }];
+const SECTIONS = [
+  { id: "trend", label: "Score trend" },
+  { id: "head-to-head", label: "Question by question" },
+];
 
 export function CompetitorsView() {
   const { results, scoring, week } = useDataset();
@@ -20,6 +31,16 @@ export function CompetitorsView() {
   const client = name(s.client);
   const cov = useMemo(() => coverage(results, week), [results, week]);
   const trend = useMemo(() => scoreTrend(scoring, s, week), [scoring, s, week]);
+  const leaders = useMemo(() => winners(scoring.rows, [week]), [scoring, week]);
+  const tally = useMemo(() => winnerTally(leaders), [leaders]);
+
+  const top = tally.led[0];
+  const mine = tally.led.find((l) => l.brand === s.client)?.count ?? 0;
+  const headline = !top
+    ? `How ${client} compares with ${listOf(focus.slice(1).map(name))}.`
+    : top.brand === s.client
+      ? `${client} is the company AI recommends most this week. It leads ${top.count} of ${tally.pairs} question and AI tool pairs.`
+      : `${name(top.brand)} is the company AI recommends most this week. It leads ${top.count} of ${tally.pairs} question and AI tool pairs. ${client} leads ${mine}.`;
 
   return (
     <div className="space-y-10">
@@ -28,7 +49,7 @@ export function CompetitorsView() {
           {s.brands[s.client]?.name ?? client} and competitors, week {week}
         </p>
         <h1 className="text-2xl leading-snug font-semibold tracking-tight text-balance sm:text-[28px]">
-          How {client} compares with {listOf(focus.slice(1).map(name))}.
+          {headline}
         </h1>
         {cov.level === "major" || cov.level === "none" ? (
           <p className="bg-warn-surface text-warn flex gap-2 rounded-lg px-3 py-2 text-sm">
@@ -58,6 +79,17 @@ export function CompetitorsView() {
         intro={`Each company's score (0 to 100) every week up to week ${week}. Higher means AI answers point buyers toward them more strongly.`}
       >
         <ScoreTrend points={trend} brands={focus} client={s.client} name={name} colors={colors} />
+      </Section>
+
+      <Section
+        id="head-to-head"
+        title="Who AI recommends, question by question"
+        intro={`For each question and AI tool in week ${week}, the company the answers recommended most strongly. Open one to read the answers.`}
+      >
+        <p className="max-w-3xl">{tallySentence(tally, name)}</p>
+        {tally.pairs > 0 ? (
+          <HeadToHead winners={leaders} week={week} name={name} colors={colors} />
+        ) : null}
       </Section>
     </div>
   );
