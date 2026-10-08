@@ -119,6 +119,25 @@ function integrationClaims(b: string, f: BrandFacts, s: string, sentence: string
   }
 }
 
+/**
+ * Where the clause that mentions a feature begins. A negation only applies
+ * within its own clause: "has no dashcams and offers GPS tracking" is two
+ * clauses, split where a new verb starts after "and" or a comma. It still
+ * carries across "or" ("doesn't offer dashcams or payroll" denies both).
+ */
+const CLAUSE_VERB =
+  "(?:offers?|includes?|handles?|supports?|provides?|comes with|has|have|lacks?|features?|doesn'?t|does not|don'?t|do not|isn'?t|is not)";
+const CLAUSE_START = new RegExp(
+  `(?:[;:]|\\bbut\\b|(?:,\\s*|\\s+)(?:and|while|whereas|plus)\\s+(?=(?:it\\s+|also\\s+)*${CLAUSE_VERB}\\b)|,\\s+(?=(?:it\\s+|also\\s+)*${CLAUSE_VERB}\\b))`,
+  "gi",
+);
+
+function clauseBefore(before: string): string {
+  let from = 0;
+  for (const m of before.matchAll(CLAUSE_START)) from = m.index + m[0].length;
+  return before.slice(from);
+}
+
 function featureClaims(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
   const feats = f.features;
   if (!feats) return;
@@ -128,7 +147,7 @@ function featureClaims(b: string, f: BrandFacts, s: string, sentence: string, ou
     if (!(key in feats)) continue;
     for (const m of scrubbed.matchAll(new RegExp(pattern, "gi"))) {
       const before = scrubbed.slice(Math.max(0, m.index - 60), m.index);
-      const clause = before.split(/[;:]|\bbut\b/).pop() ?? "";
+      const clause = clauseBefore(before);
       let claimed: boolean;
       if (new RegExp(`\\b${DENIES}\\b[^.]*$`, "i").test(clause)) claimed = false;
       else if (
