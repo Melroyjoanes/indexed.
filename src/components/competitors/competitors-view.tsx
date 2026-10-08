@@ -6,20 +6,27 @@ import { useDataset } from "@/components/data/dataset-provider";
 import { focusBrands } from "@/engine/config";
 import {
   coverage,
+  factAlerts,
   listOf,
+  replacements,
   scoreTrend,
   tallySentence,
   winners,
   winnerTally,
+  whoReplaced,
 } from "@/engine/insights";
 import { brandColors, shortOf } from "@/lib/brands";
+import { CompetitorFacts } from "./competitor-facts";
 import { HeadToHead } from "./head-to-head";
 import { Section } from "./parts";
+import { Replaced } from "./replaced";
 import { ScoreTrend } from "./score-trend";
 
 const SECTIONS = [
   { id: "trend", label: "Score trend" },
   { id: "head-to-head", label: "Question by question" },
+  { id: "replaced", label: "Who replaced whom" },
+  { id: "facts", label: "Wrong facts about competitors" },
 ];
 
 export function CompetitorsView() {
@@ -33,6 +40,19 @@ export function CompetitorsView() {
   const trend = useMemo(() => scoreTrend(scoring, s, week), [scoring, s, week]);
   const leaders = useMemo(() => winners(scoring.rows, [week]), [scoring, week]);
   const tally = useMemo(() => winnerTally(leaders), [leaders]);
+  const replaced = useMemo(
+    () => whoReplaced(replacements(scoring.rows), s.client, week),
+    [scoring, s.client, week],
+  );
+  const facts = useMemo(
+    () =>
+      factAlerts(
+        results,
+        focus.filter((b) => b !== s.client && s.facts[b]),
+        week,
+      ),
+    [results, focus, s, week],
+  );
 
   const top = tally.led[0];
   const mine = tally.led.find((l) => l.brand === s.client)?.count ?? 0;
@@ -90,6 +110,28 @@ export function CompetitorsView() {
         {tally.pairs > 0 ? (
           <HeadToHead winners={leaders} week={week} name={name} colors={colors} />
         ) : null}
+      </Section>
+
+      <Section
+        id="replaced"
+        title={`Who took ${client}'s place`}
+        intro={`When ${client} stopped being named in a question on one AI tool from one week to the next, the companies named there instead.`}
+      >
+        {week === trend[0]?.week ? (
+          <p className="text-muted-foreground">
+            This is the first week of data. Changes will show from next week.
+          </p>
+        ) : (
+          <Replaced summary={replaced} week={week} name={name} colors={colors} />
+        )}
+      </Section>
+
+      <Section
+        id="facts"
+        title="What AI gets wrong about competitors"
+        intro={`Claims in answers up to week ${week} that contradict the competitors' own fact sheets. Useful for sales conversations, when a buyer repeats one of them.`}
+      >
+        <CompetitorFacts facts={facts} week={week} colors={colors} />
       </Section>
     </div>
   );
