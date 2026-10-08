@@ -26,6 +26,6 @@ export function mentionsCsv(res: Results): string {
 export function wrongFactsCsv(res: Results): string {
   return toCsv(
     ["response_id", "brand", "fact_key", "claim_text"],
-    res.claims.filter((c) => c.wrong).map((c) => [c.responseId, c.brand, c.factKey, c.sentence]),
+    res.claims.filter((c) => c.wrong).map((c) => [c.responseId, c.brand, c.factKey, c.rawText]),
   );
 }

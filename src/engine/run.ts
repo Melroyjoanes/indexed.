@@ -4,7 +4,7 @@
  * comes from here, so every number traces back to a response id.
  */
 import { analyse, type Claim, type Hit } from "./detect";
-import type { Answer } from "./ingest";
+import { rawSpan, type Answer } from "./ingest";
 import type { Pack, Prompt } from "./pack";
 import type { Tone } from "./types";
 
@@ -19,6 +19,8 @@ export interface MentionRow {
 
 export interface ClaimRow extends Claim {
   responseId: string;
+  /** The claim exactly as it appears in the raw answer (footnotes, entities and all). */
+  rawText: string;
 }
 
 export interface AnsweredQuestion extends Answer {
@@ -58,7 +60,12 @@ export function runPack(pack: Pack): Results {
         evidence: position !== null ? (r?.evidence.get(brand) ?? "") : "",
       });
     }
-    for (const c of r?.claims ?? []) claims.push({ ...c, responseId: a.responseId });
+    for (const c of r?.claims ?? [])
+      claims.push({
+        ...c,
+        responseId: a.responseId,
+        rawText: rawSpan(a, c.start, c.end) || c.sentence,
+      });
   }
   return { pack, answers, mentions, claims };
 }

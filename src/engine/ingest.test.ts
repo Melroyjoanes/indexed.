@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { settings } from "../../tests/fixtures/pack";
-import { cleanText, domainOf, loadAnswers, normaliseEngine, parseDate } from "./ingest";
+import {
+  cleanText,
+  cleanWithMap,
+  domainOf,
+  loadAnswers,
+  normaliseEngine,
+  parseDate,
+  rawSpan,
+} from "./ingest";
 
 const jsonl = (rows: object[]) => rows.map((r) => JSON.stringify(r)).join("\n");
 
@@ -161,5 +169,32 @@ describe("normalising values", () => {
   it("reduces citations to their domain", () => {
     expect(domainOf("https://www.g2.com/categories/fleet?utm_source=ai")).toBe("g2.com");
     expect(domainOf("routelyne.com")).toBe("routelyne.com");
+  });
+});
+
+describe("keeping the raw answer next to the cleaned one", () => {
+  it("maps every cleaned character back to the raw text", () => {
+    const raw = "A &amp; B [1].\r\nC&#39;s [2, 3] end";
+    const { text, rawIndex } = cleanWithMap(raw);
+    expect(text).toBe("A & B.\nC's end");
+    expect(rawIndex).toHaveLength(text.length);
+    expect(
+      [...text].every(
+        (ch, i) => ch === "\n" || raw[rawIndex[i]!] === ch || raw[rawIndex[i]!] === "&",
+      ),
+    ).toBe(true);
+  });
+
+  it("returns the raw span behind a cleaned range, markup included", () => {
+    const raw = "Intro. Corvane is in Chicago [1] &amp; Ohio. End.";
+    const a = { raw, ...cleanWithMap(raw) };
+    const start = a.text.indexOf("Corvane");
+    const end = a.text.indexOf("Ohio.") + "Ohio.".length;
+    expect(rawSpan(a, start, end)).toBe("Corvane is in Chicago [1] &amp; Ohio.");
+    expect(rawSpan(a, start, start)).toBe("");
+  });
+
+  it("leaves unknown entities and bracketed words alone", () => {
+    expect(cleanText("&copy; [beta] [12]")).toBe("&copy; [beta]");
   });
 });
