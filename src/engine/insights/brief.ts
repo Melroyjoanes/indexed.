@@ -1,5 +1,5 @@
 /** Everything the weekly summary screen shows, as plain data. */
-import { engineLabel, focusBrands, shortName } from "../config";
+import { engineLabel, shortName } from "../config";
 import type { Results } from "../run";
 import { compare, type Change, type Scoring } from "../score";
 import { actions, type Action } from "./actions";
@@ -73,7 +73,10 @@ export function weeklyBrief(res: Results, sc: Scoring, week: number): WeeklyBrie
   ];
   const label = (e: string) => engineLabel(s, e);
   const question = (id: string) => res.pack.prompts[id]?.question ?? id;
-  const focus = focusBrands(s);
+  // cards keep a fixed order (as in brands.json) so selecting a company only moves the highlight
+  const focus = Object.values(s.brands)
+    .filter((b) => b.role === "client" || b.role === "tracked")
+    .map((b) => b.key);
   const cov = coverage(res, week);
 
   const snap = (b: string) => sc.table.find((t) => t.brand === b && t.week === week);

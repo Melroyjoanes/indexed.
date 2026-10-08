@@ -59,12 +59,13 @@ function FactRow({ f, week }: { f: FactAlert; week: number }) {
 }
 
 export function WeeklySummary() {
-  const { results, scoring, week } = useDataset();
+  const { results, scoring, week, setClient } = useDataset();
   const brief = useMemo(() => weeklyBrief(results, scoring, week), [results, scoring, week]);
   const colors = useMemo(() => brandColors(results.pack.settings), [results]);
   const [allFacts, setAllFacts] = useState(false);
   const [allActions, setAllActions] = useState(false);
   const cov = brief.coverage;
+  const clientName = brief.cards.find((c) => c.isClient)?.name ?? brief.clientName;
   const answerIds = (promptId: string, engine: string, weeks: number[]) =>
     results.answers
       .filter(
@@ -100,13 +101,13 @@ export function WeeklySummary() {
       {cov.level !== "none" && (
         <>
           <section className="space-y-3">
-            <ScoreCards cards={brief.cards} colors={colors} />
+            <ScoreCards cards={brief.cards} colors={colors} week={week} onSelect={setClient} />
             <p className="text-muted-foreground flex items-start gap-1.5 text-sm">
               <InfoIcon className="mt-0.5 size-4 shrink-0" />
               <span>
-                The score (0 to 100) is how strongly AI answers point buyers toward each company. A
-                change is clear when it&apos;s bigger than the usual difference between two runs of
-                the same question.{" "}
+                The score (0 to 100) is how strongly AI answers point buyers toward each company.
+                Click a card to see everything from that company&apos;s side. A change is clear when
+                it&apos;s bigger than the usual difference between two runs of the same question.{" "}
                 <Link href="/how-it-works" className="text-foreground underline underline-offset-4">
                   How it works
                 </Link>
@@ -124,9 +125,7 @@ export function WeeklySummary() {
                   This is the first week of data. Changes will show from next week.
                 </p>
               ) : brief.changes.length === 0 ? (
-                <p className="text-muted-foreground">
-                  No question moved for {brief.cards[0]?.name}.
-                </p>
+                <p className="text-muted-foreground">No question moved for {clientName}.</p>
               ) : (
                 <ol className="bg-card divide-y rounded-xl border">
                   {brief.changes.map((c) => (
@@ -170,10 +169,7 @@ export function WeeklySummary() {
               )}
             </Section>
 
-            <Section
-              title={`Who gained where ${brief.cards[0]?.name} dropped`}
-              className="lg:col-span-2"
-            >
+            <Section title={`Who gained where ${clientName} dropped`} className="lg:col-span-2">
               {brief.gained.length === 0 ? (
                 <p className="text-muted-foreground">
                   {brief.earlier === null ? "Shows from next week." : "Nobody in particular."}
