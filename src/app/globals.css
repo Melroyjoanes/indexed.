@@ -1,26 +1,146 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Follows the reader's system setting. */
+@custom-variant dark (@media (prefers-color-scheme: dark));
 
+/*
+ * Design tokens
+ * - Neutrals: cool grey. One accent (cobalt) for interactive elements and the client.
+ * - Tone colours carry meaning (recommended / criticised / advised against) and are
+ *   only used for tone. Company colours are only used to tell companies apart in data.
+ * - Radius: 12px surfaces, 8px controls, full pill for small labels.
+ */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-subtle: var(--subtle);
+
+  --color-tone-recommended: var(--tone-recommended);
+  --color-tone-neutral: var(--tone-neutral);
+  --color-tone-negative: var(--tone-negative);
+  --color-tone-not-recommended: var(--tone-not-recommended);
+  --color-warn: var(--warn);
+  --color-warn-surface: var(--warn-surface);
+
+  --color-brand-1: var(--brand-1);
+  --color-brand-2: var(--brand-2);
+  --color-brand-3: var(--brand-3);
+  --color-brand-4: var(--brand-4);
+  --color-brand-5: var(--brand-5);
+  --color-brand-6: var(--brand-6);
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+}
+
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.985 0.002 250);
+  --foreground: oklch(0.2 0.012 255);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --popover: oklch(1 0 0);
+  --popover-foreground: var(--foreground);
+  --primary: oklch(0.5 0.17 262);
+  --primary-foreground: oklch(0.985 0.002 250);
+  --secondary: oklch(0.955 0.004 250);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.955 0.004 250);
+  --muted-foreground: oklch(0.47 0.015 255);
+  --accent: oklch(0.95 0.025 262);
+  --accent-foreground: oklch(0.38 0.15 262);
+  --destructive: oklch(0.55 0.19 27);
+  --border: oklch(0.91 0.006 255);
+  --input: oklch(0.88 0.008 255);
+  --ring: oklch(0.6 0.15 262);
+  --subtle: oklch(0.975 0.003 250);
+
+  --tone-recommended: oklch(0.52 0.13 155);
+  --tone-neutral: oklch(0.52 0.02 255);
+  --tone-negative: oklch(0.58 0.13 70);
+  --tone-not-recommended: oklch(0.53 0.18 27);
+  --warn: oklch(0.5 0.11 70);
+  --warn-surface: oklch(0.97 0.035 85);
+
+  --brand-1: oklch(0.5 0.17 262); /* client: cobalt, same as the accent */
+  --brand-2: oklch(0.56 0.1 195); /* teal */
+  --brand-3: oklch(0.55 0.15 350); /* rose */
+  --brand-4: oklch(0.5 0.03 255); /* slate */
+  --brand-5: oklch(0.58 0.09 300); /* lavender */
+  --brand-6: oklch(0.58 0.1 125); /* olive */
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: oklch(0.17 0.008 255);
+    --foreground: oklch(0.94 0.004 250);
+    --card: oklch(0.21 0.01 255);
+    --popover: oklch(0.23 0.01 255);
+    --primary: oklch(0.7 0.13 262);
+    --primary-foreground: oklch(0.17 0.008 255);
+    --secondary: oklch(0.26 0.01 255);
+    --muted: oklch(0.26 0.01 255);
+    --muted-foreground: oklch(0.72 0.012 255);
+    --accent: oklch(0.3 0.06 262);
+    --accent-foreground: oklch(0.85 0.08 262);
+    --destructive: oklch(0.68 0.17 25);
+    --border: oklch(1 0 0 / 9%);
+    --input: oklch(1 0 0 / 14%);
+    --ring: oklch(0.7 0.13 262);
+    --subtle: oklch(0.19 0.009 255);
+
+    --tone-recommended: oklch(0.74 0.13 155);
+    --tone-neutral: oklch(0.72 0.02 255);
+    --tone-negative: oklch(0.78 0.13 75);
+    --tone-not-recommended: oklch(0.7 0.16 25);
+    --warn: oklch(0.82 0.11 80);
+    --warn-surface: oklch(0.27 0.04 80);
+
+    --brand-1: oklch(0.7 0.13 262);
+    --brand-2: oklch(0.72 0.1 195);
+    --brand-3: oklch(0.72 0.13 350);
+    --brand-4: oklch(0.7 0.03 255);
+    --brand-5: oklch(0.74 0.08 300);
+    --brand-6: oklch(0.74 0.1 125);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans antialiased;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
 }
