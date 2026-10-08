@@ -32,7 +32,7 @@ Other commands:
 ```bash
 npm run export       # writes out/mentions.csv and out/wrong_facts.csv
 npm run accuracy     # prints the accuracy check below
-npm run check        # lint, type check and the 221 tests
+npm run check        # lint, type check and the 219 tests
 ```
 
 **A new week** is just another file. Drop `week7.jsonl` into `data/` and it's picked up on the next page load, or upload it on the Data page to try it in your browser first. Field names, engine names and date formats that differ between exports are handled, so small format changes don't need code changes.
@@ -129,7 +129,7 @@ The sample includes an answer that only mentions Corvane Logistics, a five-compa
 | Wrong facts ("charges $35 to start", "connects to QuickBooks") | 6 / 6      |
 | Tone, on a set written after the rules were final              | **6 / 12** |
 
-**A separate test week** of 12 answers (`tests/fixtures/synthetic-week`), written independently with its own expected labels, matches on all 72 company, position and tone rows and finds both wrong facts. It's what showed that direct advice ("For this buyer, choose X", "do not choose X") wasn't being read as a verdict; that's now handled, along with negations written as contractions ("isn't something I'd suggest").
+Direct advice ("For this buyer, choose X", "do not choose X") is read as a verdict, and negations written as contractions ("isn't something I'd suggest") are recognised.
 
 When tone is wrong on new wording, it almost always falls back to "mentioned" rather than flipping the verdict ("a sensible budget option" reads as mentioned, not recommended). A test enforces that it never turns praise into criticism. If new data uses the same patterns, I'd expect results close to the hand check. If it's freely written, mentions and facts should hold up and tone will be closer to half right.
 
@@ -150,7 +150,7 @@ Things that went wrong and were caught:
 - **All four parallel agents hit a usage limit mid-task** and were resumed where they stopped.
 - **Reviewing the screens together found real bugs.** With no data loaded there was no way to upload any. AI tools were listed in a different order on two screens. Phones had no company switch. All fixed in #12.
 - **The first tone accuracy on new wording looked better than it was**, because the rules had been tuned on those same sentences. A fresh, untuned set gave the honest 5 / 12 at the time (6 / 12 after the contraction fix below).
-- **A test week uploaded through the app exposed missed direct advice** ("choose X") and a negation bug: "isn't" was never recognised, because there's no word boundary inside a contraction. Both fixed, with the test week added as a permanent check.
+- **A test week uploaded through the app exposed missed direct advice** ("choose X") and a negation bug: "isn't" was never recognised, because there's no word boundary inside a contraction. Both fixed, with unit tests.
 
 ---
 

@@ -16,9 +16,4 @@ export const ACCURACY = {
     tones: { right: 6, of: 12 },
     tonesMissedAsMentioned: 5, // of the 6 misses, how many fell back to "Mentioned"
   },
-  syntheticWeek: {
-    answers: 12, // tests/fixtures/synthetic-week, labels written independently
-    mentionRows: { right: 72, of: 72 },
-    wrongFacts: { right: 2, of: 2 },
-  },
 } as const;

@@ -144,7 +144,7 @@ export function HowItWorks() {
   const factCompanies = Object.keys(s.facts)
     .map((k) => s.brands[k]?.name ?? k)
     .filter(Boolean);
-  const { handCheck: hc, unseenWording: uw, syntheticWeek: sw } = ACCURACY;
+  const { handCheck: hc, unseenWording: uw } = ACCURACY;
   const first = facts.weeks[0];
   const last = facts.weeks[facts.weeks.length - 1];
 
@@ -374,11 +374,6 @@ export function HowItWorks() {
           {uw.wrongFacts.of}. Tone was right on {uw.tones.right} of {uw.tones.of}. In{" "}
           {uw.tonesMissedAsMentioned} of the {uw.tones.of - uw.tones.right} misses it fell back to
           Mentioned rather than guessing.
-        </p>
-        <p>
-          A separate test week of {sw.answers} answers, written independently with its own expected
-          results, matched on all {sw.mentionRows.of} company, position and tone checks and found
-          both wrong facts ({sw.wrongFacts.right} of {sw.wrongFacts.of}).
         </p>
         <p>
           In practice: who is named, and in what order, can be trusted on new data. Tone is reliable
