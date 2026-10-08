@@ -1,0 +1,35 @@
+{
+  "$comment": "Who we track and how we score. Change this file, not the code, to add a competitor or view the market from another company's side.",
+  "client": "corvane",
+  "brands": {
+    "corvane": {
+      "aliases": ["Corvane Fleet", "CorvaneFleet", "Corvain", "Corvain Fleet"],
+      "lookalikes": ["Corvane Logistics"]
+    },
+    "trakvia": { "aliases": ["TrakVia", "Trak Via"] },
+    "routelyne": { "aliases": ["RouteLyne", "Route Lyne"] },
+    "gridwell": { "aliases": ["Gridwell Systems", "GridWell"] },
+    "fleetora": { "aliases": [] },
+    "novahaul": { "aliases": ["NovaHaul", "Nova Haul"] }
+  },
+  "engines": {
+    "chatgpt": { "label": "ChatGPT", "aliases": ["chatgpt", "chat gpt", "openai", "gpt"] },
+    "perplexity": { "label": "Perplexity", "aliases": ["perplexity"] },
+    "google_ai_overview": {
+      "label": "Google AI Overviews",
+      "aliases": [
+        "google_ai_overview",
+        "ai overview",
+        "ai overviews",
+        "google ai overview",
+        "google"
+      ]
+    }
+  },
+  "runsPerWeek": 2,
+  "score": {
+    "points": { "recommended": 100, "neutral": 50, "negative": 20, "not_recommended": 0 },
+    "positionWeight": [1.0, 0.9, 0.8],
+    "clearChangeMultiplier": 2.0
+  }
+}
