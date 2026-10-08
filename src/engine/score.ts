@@ -70,7 +70,12 @@ export interface WeekScore {
 export interface Scoring {
   rows: ScoredRow[];
   cells: Cell[];
-  noise: Record<string, number>;
+  /**
+   * Variance of a single run for a company, estimated only from answers up to
+   * and including `week`, so adding later weeks never changes an earlier
+   * week's uncertainty or verdict.
+   */
+  noiseAt: (brand: string, week: number) => number;
   weeks: number[];
   table: WeekScore[];
 }
@@ -134,10 +139,16 @@ export function cellsOf(rows: ScoredRow[]): Cell[] {
   }));
 }
 
-/** Per company: variance of a single run, from every pair of runs of the same question. */
-export function runNoise(rows: ScoredRow[]): Record<string, number> {
+/**
+ * Per company: variance of a single run, from every pair of runs of the same
+ * question, using only weeks up to `upTo` when given.
+ */
+export function runNoise(rows: ScoredRow[], upTo = Infinity): Record<string, number> {
   const out: Record<string, number> = {};
-  for (const [brand, g] of groupBy(rows, (r) => r.brand)) {
+  for (const [brand, g] of groupBy(
+    rows.filter((r) => r.week <= upTo),
+    (r) => r.brand,
+  )) {
     const sq: number[] = [];
     for (const runs of groupBy(g, cellKey).values()) {
       if (runs.length >= 2) sq.push((runs[0]!.points - runs[1]!.points) ** 2 / 2);
@@ -157,7 +168,7 @@ function weighted(cells: Cell[], var1: number): { score: number; se: number } | 
 
 /** Like-for-like change between two weeks for one company. */
 export function compare(
-  sc: Pick<Scoring, "cells" | "noise">,
+  sc: Pick<Scoring, "cells" | "noiseAt">,
   brand: string,
   week: number,
   earlier: number | null,
@@ -179,7 +190,8 @@ export function compare(
   const oldKeys = new Set(old.map(pe));
   const keys = new Set(cur.map(pe).filter((k) => oldKeys.has(k)));
   if (!keys.size) return { ...empty, firstWeek: false };
-  const v = sc.noise[brand] ?? 0;
+  // uncertainty from data available at the later (reporting) week only
+  const v = sc.noiseAt(brand, week);
   const a = weighted(
     cur.filter((c) => keys.has(pe(c))),
     v,
@@ -223,7 +235,15 @@ export function score(res: Results): Scoring {
   const s = res.pack.settings;
   const rows = scoreRows(res);
   const cells = cellsOf(rows);
-  const noise = runNoise(rows);
+  const byWeek = new Map<number, Record<string, number>>();
+  const noiseAt = (brand: string, week: number) => {
+    let n = byWeek.get(week);
+    if (!n) {
+      n = runNoise(rows, week);
+      byWeek.set(week, n);
+    }
+    return n[brand] ?? 0;
+  };
   const weeks = [
     ...new Set(res.answers.map((a) => a.week).filter((w): w is number => w !== null)),
   ].sort((a, b) => a - b);
@@ -235,7 +255,7 @@ export function score(res: Results): Scoring {
     const have = new Set(ok.map((a) => a.engine));
     for (const brand of Object.keys(s.brands)) {
       const cur = cells.filter((c) => c.brand === brand && c.week === week);
-      const w = weighted(cur, noise[brand] ?? 0);
+      const w = weighted(cur, noiseAt(brand, week));
       table.push({
         brand,
         week,
@@ -249,5 +269,5 @@ export function score(res: Results): Scoring {
       });
     }
   }
-  return { rows, cells, noise, weeks, table };
+  return { rows, cells, noiseAt, weeks, table };
 }
