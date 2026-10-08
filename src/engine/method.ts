@@ -2,7 +2,7 @@
  * Numbers for the "How it works" page, read from the loaded data and the
  * scoring settings so the explanation can't drift from what the code does.
  */
-import { engineLabel } from "./config";
+import { engineLabel, orderEngines } from "./config";
 import { coverage } from "./insights/coverage";
 import type { Results } from "./run";
 import type { ScoredRow, Scoring } from "./score";
@@ -32,7 +32,10 @@ export interface MethodFacts {
 
 export function methodFacts(res: Results): MethodFacts {
   const s = res.pack.settings;
-  const engines = [...new Set(res.answers.map((a) => a.engine))].sort();
+  const engines = orderEngines(
+    res.answers.map((a) => a.engine),
+    res.pack.settings,
+  );
   const promptIds = new Set([
     ...Object.keys(res.pack.prompts),
     ...res.answers.map((a) => a.promptId),

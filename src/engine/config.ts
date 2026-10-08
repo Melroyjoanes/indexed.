@@ -94,3 +94,10 @@ export function shortName(settings: Settings, key: string): string {
 export function engineLabel(settings: Settings, key: string): string {
   return settings.engines[key]?.label ?? key.replace(/_/g, " ");
 }
+
+/** Engines in the order they're listed in config, then any others alphabetically. */
+export function orderEngines(engines: Iterable<string>, settings: Settings): string[] {
+  const known = Object.keys(settings.engines);
+  const rank = (e: string) => (known.includes(e) ? known.indexOf(e) : known.length);
+  return [...new Set(engines)].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
+}
