@@ -4,7 +4,7 @@ import { useRef, useState, type DragEvent } from "react";
 import { CheckCircleIcon, FileArrowUpIcon, WarningIcon } from "@phosphor-icons/react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
-import { useDataset } from "@/components/data/dataset-provider";
+import { useUploadActions } from "@/components/data/dataset-provider";
 import { listOf } from "@/engine/insights";
 import { readPicked } from "@/lib/upload";
 
@@ -16,7 +16,7 @@ type Status =
 
 export function UploadPanel() {
   // aliased: this is a plain function from the provider, not a React hook
-  const { useUpload: addFiles, clearUpload, source } = useDataset();
+  const { add: addFiles, clear: clearUpload, source } = useUploadActions();
   const input = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [over, setOver] = useState(false);

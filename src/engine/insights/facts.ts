@@ -1,4 +1,5 @@
 /** Wrong facts grouped into alerts, only ever using weeks up to the one shown. */
+import { orderEngines } from "../config";
 import type { ClaimRow, Results } from "../run";
 
 export interface FactAlert {
@@ -46,7 +47,7 @@ export function describeFact(
     case "hq":
       return { claim: `${name} is based in ${claimed}`, truth: `it's in ${actual}` };
     case "founded":
-      return { claim: `${name} was founded in ${claimed}`, truth: `it was ${actual}` };
+      return { claim: `${name} was founded in ${claimed}`, truth: `it was founded in ${actual}` };
     case "starting_price_usd":
       return {
         claim: `${name} starts at $${claimed} per vehicle`,
@@ -96,7 +97,10 @@ export function factAlerts(res: Results, brands: string[], through: number): Fac
         thisWeek: weeks.filter((w) => w === through).length,
         firstWeek: Math.min(...weeks),
         lastWeek: Math.max(...weeks),
-        engines: [...new Set(ids.map((id) => weekOf.get(id)!.engine))].sort(),
+        engines: orderEngines(
+          ids.map((id) => weekOf.get(id)!.engine),
+          s,
+        ),
         responseIds: ids,
         example: first.sentence,
       };

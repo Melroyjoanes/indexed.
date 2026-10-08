@@ -105,7 +105,7 @@ describe("report content", () => {
     ]);
     const r = reportContent(res, sc, 2);
     expect(r.factsThisWeek.map((f) => f.text)).toEqual([
-      "4 answers say Corvane was founded in 2009. In fact, it was 2014.",
+      "4 answers say Corvane was founded in 2009. In fact, it was founded in 2014.",
     ]);
     expect(r.factsHistory).toHaveLength(2);
     expect(r.factsHistory[1]?.claim).toBe(

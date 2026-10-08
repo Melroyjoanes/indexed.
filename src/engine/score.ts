@@ -13,6 +13,7 @@
  * the question/engine pairs both weeks have, so a missing engine can't look
  * like a drop.
  */
+import { orderEngines } from "./config";
 import type { Results } from "./run";
 import type { Settings, Tone } from "./types";
 
@@ -208,7 +209,10 @@ export function compare(
  */
 export function expectedFor(res: Results, week: number): { engines: string[]; prompts: string[] } {
   const upTo = res.answers.filter((a) => a.week !== null && a.week <= week);
-  const engines = [...new Set(upTo.map((a) => a.engine))].sort();
+  const engines = orderEngines(
+    upTo.map((a) => a.engine),
+    res.pack.settings,
+  );
   const prompts = [
     ...new Set([...Object.keys(res.pack.prompts), ...upTo.map((a) => a.promptId)]),
   ].sort();
