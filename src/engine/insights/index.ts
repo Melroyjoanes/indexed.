@@ -4,5 +4,6 @@ export * from "./changes";
 export * from "./competitors";
 export * from "./coverage";
 export * from "./facts";
+export * from "./questions";
 export * from "./sources";
 export * from "./words";
