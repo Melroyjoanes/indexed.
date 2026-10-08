@@ -1,0 +1,4 @@
+# Never upload the client data pack or local outputs with a deployment.
+/data
+/out
+.claude
