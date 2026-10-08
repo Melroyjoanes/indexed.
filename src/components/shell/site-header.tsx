@@ -54,6 +54,12 @@ export function SiteHeader() {
           </div>
         ) : null}
       </div>
+      {data ? (
+        <div className="flex items-center gap-2 border-t px-4 py-2 sm:hidden">
+          <span className="text-muted-foreground text-sm">Viewing as</span>
+          <ViewAs className="h-8 flex-1" />
+        </div>
+      ) : null}
       <nav aria-label="Main" className="flex gap-1 overflow-x-auto border-t px-4 py-2 md:hidden">
         {NAV.map((n) => {
           const active = n.href === "/" ? pathname === "/" : pathname.startsWith(n.href);
