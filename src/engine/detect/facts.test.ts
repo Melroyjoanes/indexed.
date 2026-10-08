@@ -136,3 +136,30 @@ describe("curly apostrophes", () => {
     });
   });
 });
+
+describe("feature negation stays in its own clause", () => {
+  // Corvane's fact sheet: GPS tracking and ELD compliance yes; dashcams and payroll no.
+  it.each([
+    // both statements agree with the fact sheet: nothing is wrong
+    ["Corvane Fleet has no dashcams and offers GPS tracking.", []],
+    ["Corvane Fleet offers GPS tracking and has no dashcams.", []],
+    ["Corvane Fleet offers GPS tracking, but no dashcams.", []],
+    ["Corvane Fleet doesn't offer dashcams or payroll.", []],
+    // paired controls: the same shapes with a real contradiction are still caught
+    ["Corvane Fleet has dashcams and offers GPS tracking.", ["corvane:features.dashcams"]],
+    [
+      "Corvane Fleet includes GPS tracking and doesn't support ELD compliance.",
+      ["corvane:features.eld_compliance"],
+    ],
+    [
+      "Corvane Fleet lacks ELD compliance, but offers dashcams.",
+      ["corvane:features.dashcams", "corvane:features.eld_compliance"],
+    ],
+    [
+      "Corvane Fleet offers dashcams and payroll.",
+      ["corvane:features.dashcams", "corvane:features.payroll"],
+    ],
+  ])("%s", (text, expected) => {
+    expect([...wrong(text)].sort()).toEqual(expected);
+  });
+});
