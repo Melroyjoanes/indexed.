@@ -164,7 +164,9 @@ export function reportContent(res: Results, sc: Scoring, week: number): ReportCo
   const client = shortName(s, s.client);
   const none = brief.coverage.level === "none";
 
-  const scores: ReportScoreRow[] = brief.cards.map((c) => ({
+  // the report leads with the company it was made for
+  const ordered = [...brief.cards].sort((a, b) => Number(b.isClient) - Number(a.isClient));
+  const scores: ReportScoreRow[] = ordered.map((c) => ({
     brand: c.brand,
     name: c.name,
     isClient: c.isClient,

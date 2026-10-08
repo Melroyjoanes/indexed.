@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "cn";
-import { useMaybeDataset } from "@/components/data/dataset-provider";
+import { useMaybeDataset, useUploadActions } from "@/components/data/dataset-provider";
 import { WeekPicker } from "./week-picker";
 import { ViewAs } from "./view-as";
 
@@ -12,12 +12,14 @@ const NAV = [
   { href: "/questions", label: "Questions" },
   { href: "/competitors", label: "Competitors" },
   { href: "/reports", label: "Reports" },
+  { href: "/data", label: "Data" },
 ];
 
 export function SiteHeader() {
   const pathname = usePathname();
   const params = useSearchParams();
   const data = useMaybeDataset();
+  const upload = useUploadActions();
   const qs = params.toString();
   const keep = (href: string) => (qs ? `${href}?${qs}` : href);
 
@@ -47,8 +49,22 @@ export function SiteHeader() {
             );
           })}
         </nav>
+        {upload.source === "upload" ? (
+          <span className="bg-warn-surface text-warn ml-auto inline-flex items-center gap-2 rounded-full py-1 pr-1 pl-3 text-xs font-medium">
+            Uploaded data, this tab only
+            <button
+              type="button"
+              onClick={upload.clear}
+              className="text-foreground rounded-full bg-white/80 px-2 py-0.5 hover:bg-white"
+            >
+              Reset
+            </button>
+          </span>
+        ) : null}
         {data ? (
-          <div className="ml-auto flex items-center gap-2">
+          <div
+            className={cn("flex items-center gap-2", upload.source === "upload" ? "" : "ml-auto")}
+          >
             <ViewAs />
             <WeekPicker />
           </div>

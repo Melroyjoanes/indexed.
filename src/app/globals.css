@@ -2,8 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Follows the reader's system setting. */
-@custom-variant dark (@media (prefers-color-scheme: dark));
+/* Light theme only: the dashboard is read in daylight and printed into board packs. */
+@custom-variant dark (&:is(.dark *));
 
 /*
  * Design tokens
@@ -95,47 +95,13 @@
   --brand-6: oklch(0.58 0.1 125); /* olive */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.17 0.008 255);
-    --foreground: oklch(0.94 0.004 250);
-    --card: oklch(0.21 0.01 255);
-    --popover: oklch(0.23 0.01 255);
-    --primary: oklch(0.7 0.13 262);
-    --primary-foreground: oklch(0.17 0.008 255);
-    --secondary: oklch(0.26 0.01 255);
-    --muted: oklch(0.26 0.01 255);
-    --muted-foreground: oklch(0.72 0.012 255);
-    --accent: oklch(0.3 0.06 262);
-    --accent-foreground: oklch(0.85 0.08 262);
-    --destructive: oklch(0.68 0.17 25);
-    --border: oklch(1 0 0 / 9%);
-    --input: oklch(1 0 0 / 14%);
-    --ring: oklch(0.7 0.13 262);
-    --subtle: oklch(0.19 0.009 255);
-
-    --tone-recommended: oklch(0.74 0.13 155);
-    --tone-neutral: oklch(0.72 0.02 255);
-    --tone-negative: oklch(0.78 0.13 75);
-    --tone-not-recommended: oklch(0.7 0.16 25);
-    --warn: oklch(0.82 0.11 80);
-    --warn-surface: oklch(0.27 0.04 80);
-
-    --brand-1: oklch(0.7 0.13 262);
-    --brand-2: oklch(0.72 0.1 195);
-    --brand-3: oklch(0.72 0.13 350);
-    --brand-4: oklch(0.7 0.03 255);
-    --brand-5: oklch(0.74 0.08 300);
-    --brand-6: oklch(0.74 0.1 125);
-  }
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   html {
     @apply font-sans antialiased;
+    color-scheme: light;
   }
   body {
     @apply bg-background text-foreground;

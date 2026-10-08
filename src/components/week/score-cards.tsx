@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowDownRightIcon, ArrowUpRightIcon, MinusIcon } from "@phosphor-icons/react";
+import { ArrowDownRightIcon, ArrowUpRightIcon, InfoIcon, MinusIcon } from "@phosphor-icons/react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "cn";
 import type { ChangeView, ScoreCard } from "@/engine/insights";
 import { percent, score, signed } from "@/lib/format";
@@ -33,12 +34,40 @@ function Change({ c }: { c: ChangeView | null }) {
   );
 }
 
+/** What the small trend line on each card shows. */
+function TrendHelp({ name, week }: { name: string; week: number }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <button
+            type="button"
+            aria-label="What the trend line shows"
+            className="text-muted-foreground hover:text-foreground relative z-10 rounded-full p-0.5"
+          />
+        }
+      >
+        <InfoIcon className="size-3.5" />
+      </TooltipTrigger>
+      <TooltipContent className="max-w-64 text-left leading-snug">
+        {name}&apos;s score each week up to week {week}, on the same 0 to 100 scale. Each dot is one
+        week; the last one is the week shown. An open dot marks a week where some answers were
+        missing, so it compares fewer AI tools.
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function ScoreCards({
   cards,
   colors,
+  week,
+  onSelect,
 }: {
   cards: ScoreCard[];
   colors: Record<string, string>;
+  week: number;
+  onSelect: (brand: string) => void;
 }) {
   return (
     <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -48,20 +77,38 @@ export function ScoreCards({
           <li
             key={c.brand}
             className={cn(
-              "bg-card flex flex-col gap-3 rounded-xl border p-4",
-              c.isClient && "border-primary/40 ring-primary/20 ring-1",
+              "bg-card relative flex flex-col gap-3 rounded-xl border p-4 transition-colors",
+              c.isClient
+                ? "border-primary/50 ring-primary/25 ring-2"
+                : "hover:border-primary/30 hover:bg-subtle",
             )}
           >
+            {/* the whole card switches the dashboard to this company */}
+            <button
+              type="button"
+              onClick={() => onSelect(c.brand)}
+              aria-pressed={c.isClient}
+              aria-label={c.isClient ? `Showing ${c.name}` : `Show the dashboard for ${c.name}`}
+              className="focus-visible:ring-ring absolute inset-0 rounded-xl outline-none focus-visible:ring-2 active:translate-y-px"
+            />
             <div className="flex items-baseline justify-between">
-              <h3 className="font-medium">{c.name}</h3>
+              <h3 className="font-medium">
+                {c.name}
+                {c.isClient ? (
+                  <span className="text-primary ml-2 text-xs font-normal">Selected</span>
+                ) : null}
+              </h3>
               <span className="text-muted-foreground tabular text-xs">
                 #{c.rank} of {cards.length}
               </span>
             </div>
             <div className="flex items-end justify-between gap-3">
               <p className="tabular text-4xl font-semibold tracking-tight">{score(c.score)}</p>
-              <div className="w-24">
-                <Sparkline points={c.trend} color={colors[c.brand]!} />
+              <div className="flex items-start gap-1">
+                <div className="w-24">
+                  <Sparkline points={c.trend} color={colors[c.brand]!} />
+                </div>
+                <TrendHelp name={c.name} week={week} />
               </div>
             </div>
             <div className="space-y-1">
