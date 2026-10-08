@@ -1,12 +1,19 @@
 {
-  "name": "indexed-scaffold",
+  "name": "indexed",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "export": "tsx scripts/export.ts",
+    "check": "npm run lint && npm run typecheck && npm run test"
   },
   "dependencies": {
     "next": "16.4.0",
@@ -20,7 +27,15 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
+    "prettier": "^3.9.9",
+    "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^3.2.7"
+  },
+  "description": "AI visibility tracking for Corvane Fleet",
+  "engines": {
+    "node": ">=20.9"
   }
 }
