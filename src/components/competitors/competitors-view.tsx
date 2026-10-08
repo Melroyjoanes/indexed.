@@ -10,6 +10,7 @@ import {
   listOf,
   replacements,
   scoreTrend,
+  sources,
   tallySentence,
   winners,
   winnerTally,
@@ -21,12 +22,14 @@ import { HeadToHead } from "./head-to-head";
 import { Section } from "./parts";
 import { Replaced } from "./replaced";
 import { ScoreTrend } from "./score-trend";
+import { SourcesList } from "./sources-list";
 
 const SECTIONS = [
   { id: "trend", label: "Score trend" },
   { id: "head-to-head", label: "Question by question" },
   { id: "replaced", label: "Who replaced whom" },
   { id: "facts", label: "Wrong facts about competitors" },
+  { id: "sources", label: "Sources" },
 ];
 
 export function CompetitorsView() {
@@ -44,6 +47,7 @@ export function CompetitorsView() {
     () => whoReplaced(replacements(scoring.rows), s.client, week),
     [scoring, s.client, week],
   );
+  const cited = useMemo(() => sources(results, week), [results, week]);
   const facts = useMemo(
     () =>
       factAlerts(
@@ -132,6 +136,21 @@ export function CompetitorsView() {
         intro={`Claims in answers up to week ${week} that contradict the competitors' own fact sheets. Useful for sales conversations, when a buyer repeats one of them.`}
       >
         <CompetitorFacts facts={facts} week={week} colors={colors} />
+      </Section>
+
+      <Section
+        id="sources"
+        title="Which websites the AI tools cite"
+        intro={`The sites AI answers point to as sources, most cited first. Sites where a competitor is named more often than ${client} are highlighted, and may be worth trying to get covered on.`}
+      >
+        <SourcesList
+          list={cited}
+          brands={focus}
+          client={s.client}
+          week={week}
+          name={name}
+          colors={colors}
+        />
       </Section>
     </div>
   );
