@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "export": "tsx scripts/export.ts",
-    "check": "npm run lint && npm run typecheck && npm run test"
+    "check": "npm run lint && npm run typecheck && npm run test",
+    "accuracy": "tsx scripts/accuracy.ts"
   },
   "dependencies": {
     "next": "16.4.0",
