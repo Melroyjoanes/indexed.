@@ -133,3 +133,48 @@ describe("negated praise with contractions", () => {
     expect(tone(text, "corvane")).toBe("not_recommended");
   });
 });
+
+describe("tone follows the subject and its negation", () => {
+  it.each([
+    // "avoid" aimed at a company vs at something else
+    ["Avoid Corvane if you run fewer than 100 vehicles.", "not_recommended"],
+    ["At your size I'd avoid it. Corvane is built for enterprises.", "neutral"],
+    ["Corvane Fleet helps avoid outages.", "neutral"],
+    ["Corvane Fleet helps fleets avoid fines.", "neutral"],
+    // criticism vs negated criticism
+    ["Corvane Fleet has issues with setup.", "negative"],
+    ["Corvane Fleet has no issues and is easy to use.", "recommended"],
+    ["Corvane Fleet isn't slow at all.", "neutral"],
+    ["Corvane Fleet is slow to set up.", "negative"],
+    // explicit rejection still works
+    ["Do not choose Corvane for this buyer.", "not_recommended"],
+  ])("%s", (text, expected) => {
+    expect(tone(text, "corvane")).toBe(expected);
+  });
+});
+
+describe("two companies in one sentence", () => {
+  const tones = (text: string) => Object.fromEntries(analyse(text, settings).tones);
+
+  it("gives each clause's verdict to the company it names", () => {
+    expect(tones("Corvane is a strong pick, but avoid Trakvia.")).toEqual({
+      corvane: "recommended",
+      trakvia: "not_recommended",
+    });
+    expect(tones("Trakvia is slow, while Corvane is the top pick.")).toEqual({
+      trakvia: "negative",
+      corvane: "recommended",
+    });
+    expect(tones("Corvane is the top pick; Trakvia has had outages.")).toEqual({
+      corvane: "recommended",
+      trakvia: "negative",
+    });
+  });
+
+  it("leaves a plain list of companies neutral", () => {
+    expect(tones("Other options include Corvane and Trakvia.")).toEqual({
+      corvane: "neutral",
+      trakvia: "neutral",
+    });
+  });
+});
