@@ -22,7 +22,7 @@ export function analyse(text: string, settings: Settings): Analysis {
   const { hits, masked } = findMentions(text, settings);
   const pos = positions(hits);
   const segments = segment(text, masked, hits);
-  const { tones, evidence } = tonesFor(segments, [...pos.keys()]);
+  const { tones, evidence } = tonesFor(segments, [...pos.keys()], hits);
   return {
     hits,
     positions: pos,

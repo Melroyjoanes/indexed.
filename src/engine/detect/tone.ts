@@ -8,12 +8,15 @@
  * A company that's named but never judged is neutral.
  */
 import type { Tone } from "../types";
+import type { Hit } from "./mentions";
 import { LOOKALIKE, stripLabel, type Segment } from "./sentences";
 
 const rx = (list: string[]) => list.map((p) => new RegExp(p, "i"));
 
 const ADVISED_AGAINST = rx([
-  "\\bavoid\\b",
+  // "avoid" only counts when it is aimed at a company: "Avoid Trakvia", "I'd avoid it",
+  // not "helps avoid outages" (companies are marked as ⟨CO⟩ before classifying)
+  "\\bavoid(?:ing)?\\s+(?:⟨CO[^⟩]*⟩|it\\b|them\\b|this one\\b)",
   // direct advice not to pick a company: "do not choose X", "don't go with X"
   "\\b(?:do not|don'?t|never)\\s+(?:choose|pick|buy|go with|go for|opt for|consider|shortlist)\\b",
   "isn'?t the right (?:choice|fit|option)",
@@ -31,7 +34,6 @@ const ADVISED_AGAINST = rx([
   "(?:don'?t|do not) recommend",
   "\\bnot worth\\b",
   "\\bpass on\\b",
-  "\\bi'?d avoid\\b",
   "\\bnot suit(?:ed|able)\\b",
   "look elsewhere",
   "don'?t bother",
@@ -139,6 +141,24 @@ const PRAISE = rx([
 const NEGATED = /(?:\b(?:not|never|no longer|hardly)\b|n['’]t\b)(?:\W+\w+){0,3}?\W+$/i;
 const CONTRAST = /(?:,|;|\s)\s*(?:but|though|although|however|yet|even so|that said)\b/i;
 
+/** Plain text without ⟨CO⟩ markers: "avoid" followed by a capitalised name (case-sensitive). */
+const AVOID_NAMED = /\b[Aa]void(?:ing)?\s+[A-Z]/;
+
+/**
+ * A criticism cue that is negated ("no issues", "isn't slow") or is the thing
+ * being prevented ("helps avoid outages", "reduces downtime") is not criticism.
+ */
+const NEGATOR =
+  /(?:\b(?:no|not|never|without|hardly|zero|avoid(?:s|ing)?|prevent(?:s|ing)?|reduc(?:e|es|ing)|fix(?:es|ing)?|eliminat(?:e|es|ing)|cut(?:s|ting)?)\b|n['\u2019]t\b)(?:\W+\w+){0,2}?\W+$/i;
+
+function criticised(s: string): boolean {
+  for (const p of CRITICISED) {
+    const g = new RegExp(p.source, "gi");
+    for (const m of s.matchAll(g)) if (!NEGATOR.test(s.slice(0, m.index))) return true;
+  }
+  return false;
+}
+
 function praise(s: string): Tone | null {
   for (const p of PRAISE) {
     const m = p.exec(s);
@@ -155,8 +175,9 @@ export function classify(text: string): Tone | null {
   const parts = s.split(CONTRAST);
   const chunks = parts.length > 1 ? [parts[parts.length - 1]!, s] : [s];
   for (const chunk of chunks) {
-    if (ADVISED_AGAINST.some((p) => p.test(chunk))) return "not_recommended";
-    if (CRITICISED.some((p) => p.test(chunk))) return "negative";
+    if (ADVISED_AGAINST.some((p) => p.test(chunk)) || AVOID_NAMED.test(chunk))
+      return "not_recommended";
+    if (criticised(chunk)) return "negative";
     const v = praise(chunk);
     if (v) return v;
   }
@@ -168,25 +189,54 @@ export interface ToneResult {
   evidence: Map<string, string>; // the sentence the tone came from
 }
 
-export function tonesFor(segs: Segment[], mentioned: string[]): ToneResult {
+/** Segment text with each company replaced by ⟨CO:key⟩, so rules can see who a phrase is about. */
+function coded(seg: Segment, hits: Hit[]): string {
+  const end = seg.start + seg.text.length;
+  const inSeg = hits
+    .filter((h) => seg.start <= h.start && h.end <= end)
+    .sort((a, b) => b.start - a.start);
+  let t = seg.text;
+  for (const h of inSeg)
+    t = t.slice(0, h.start - seg.start) + `⟨CO:${h.brand}⟩` + t.slice(h.end - seg.start);
+  return t;
+}
+
+const companiesIn = (t: string) => [...new Set([...t.matchAll(/⟨CO:([^⟩]+)⟩/g)].map((m) => m[1]!))];
+
+/** Splits a sentence naming several companies into clauses, each judged on its own. */
+const CLAUSE_BREAK = /;|,?\s+(?:but|while|whereas|although|though|however|yet)\s+/i;
+
+export function tonesFor(segs: Segment[], mentioned: string[], hits: Hit[] = []): ToneResult {
   const verdicts = new Map<string, Tone>();
   const evidence = new Map<string, string>();
-  for (const seg of segs) {
-    let targets: string[];
-    let v: Tone | null;
-    if (seg.isTableRow) {
-      targets = seg.brands.slice(0, 1);
-      v = seg.verdictCell ? classify(seg.verdictCell) : null;
-      if (v === null && targets.length) v = "neutral"; // a plain label in a verdict column is still a verdict
-    } else {
-      targets = seg.subject && seg.subject !== LOOKALIKE ? [seg.subject] : [];
-      v = classify(stripLabel(seg.text));
-    }
-    if (v === null) continue;
+  const judge = (targets: string[], v: Tone | null, seg: Segment) => {
+    if (v === null) return;
     for (const b of targets) {
       verdicts.set(b, v);
       evidence.set(b, seg.text.trim());
     }
+  };
+  for (const seg of segs) {
+    if (seg.isTableRow) {
+      const targets = seg.brands.slice(0, 1);
+      let v = seg.verdictCell ? classify(seg.verdictCell) : null;
+      if (v === null && targets.length) v = "neutral"; // a plain label in a verdict column is still a verdict
+      judge(targets, v, seg);
+      continue;
+    }
+    const body = stripLabel(coded(seg, hits));
+    const named = companiesIn(body);
+    if (named.length >= 2) {
+      // e.g. "Corvane is a strong pick, but avoid Trakvia": one verdict per clause, for the
+      // company that clause names (the first one if a clause names several)
+      for (const clause of body.split(CLAUSE_BREAK)) {
+        const [first] = companiesIn(clause);
+        if (first) judge([first], classify(clause), seg);
+      }
+      continue;
+    }
+    const targets = seg.subject && seg.subject !== LOOKALIKE ? [seg.subject] : [];
+    judge(targets, classify(body), seg);
   }
   const tones = new Map<string, Tone>(mentioned.map((b) => [b, verdicts.get(b) ?? "neutral"]));
   return { tones, evidence };
