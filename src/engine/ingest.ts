@@ -14,7 +14,9 @@ export interface Answer {
   promptId: string;
   run: number | null;
   collectedAt: string | null; // ISO 8601
-  text: string;
+  text: string; // cleaned text the detection rules read
+  raw: string; // the answer exactly as received
+  rawIndex: number[]; // for each character of `text`, its position in `raw`
   citations: string[];
   error: string | null;
   sourceFile: string;
@@ -122,12 +124,54 @@ const ENTITIES: Record<string, string> = {
   nbsp: " ",
 };
 
-/** Decode HTML entities (&amp;) and drop Perplexity-style [1] footnote markers. */
+const ENTITY_AT = /^&(amp|lt|gt|quot|#39|apos|nbsp);/;
+const FOOTNOTE_AT = /^[ \t]*\[\d+(?:,\s*\d+)*\]/;
+
+/**
+ * Decodes HTML entities (&amp;) and drops Perplexity-style [1] footnote markers,
+ * keeping a map from every character of the cleaned text back to its position
+ * in the raw answer, so exported evidence can quote the answer exactly.
+ */
+export function cleanWithMap(raw: string): { text: string; rawIndex: number[] } {
+  let text = "";
+  const rawIndex: number[] = [];
+  let i = 0;
+  while (i < raw.length) {
+    const rest = raw.slice(i, i + 40);
+    const foot = FOOTNOTE_AT.exec(rest);
+    if (foot) {
+      i += foot[0].length;
+      continue;
+    }
+    const ent = raw[i] === "&" ? ENTITY_AT.exec(rest) : null;
+    if (ent) {
+      text += ENTITIES[ent[1]!] ?? ent[0];
+      rawIndex.push(i);
+      i += ent[0].length;
+      continue;
+    }
+    if (raw[i] === "\r" && raw[i + 1] === "\n") {
+      text += "\n";
+      rawIndex.push(i + 1);
+      i += 2;
+      continue;
+    }
+    text += raw[i];
+    rawIndex.push(i);
+    i += 1;
+  }
+  return { text, rawIndex };
+}
+
+/** The cleaned text only. */
 export function cleanText(text: string): string {
-  return text
-    .replace(/&(amp|lt|gt|quot|#39|apos|nbsp);/g, (_, e: string) => ENTITIES[e] ?? _)
-    .replace(/[ \t]*\[\d+(?:,\s*\d+)*\]/g, "")
-    .replace(/\r\n/g, "\n");
+  return cleanWithMap(text).text;
+}
+
+/** The exact raw span behind cleaned positions [start, end). */
+export function rawSpan(a: Pick<Answer, "raw" | "rawIndex">, start: number, end: number): string {
+  if (end <= start || !a.rawIndex.length) return "";
+  return a.raw.slice(a.rawIndex[start]!, a.rawIndex[end - 1]! + 1);
 }
 
 /** "https://www.g2.com/x?utm=1" -> "g2.com" */
@@ -188,7 +232,8 @@ export function loadAnswers(
       }
       seen.add(responseId);
 
-      const text = cleanText(String(pick(row, "text") ?? ""));
+      const raw = String(pick(row, "text") ?? "");
+      const { text, rawIndex } = cleanWithMap(raw);
       const error = pick(row, "error");
       const ok = !error && text.trim().length > 0;
       if (!ok) report.failed.push(responseId);
@@ -202,6 +247,8 @@ export function loadAnswers(
         run: toInt(pick(row, "run")),
         collectedAt: parseDate(pick(row, "collectedAt")),
         text,
+        raw,
+        rawIndex,
         citations: citations(pick(row, "citations")),
         error: error ? String(error) : null,
         sourceFile: file.name,

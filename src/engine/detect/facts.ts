@@ -14,8 +14,14 @@ export interface Claim {
   claimed: string;
   actual: string;
   sentence: string;
+  /** Position of `sentence` in the analysed text, [start, end). */
+  start: number;
+  end: number;
   wrong: boolean;
 }
+
+/** A claim as a rule finds it, before its position is attached. */
+type Found = Omit<Claim, "start" | "end">;
 
 const FEATURES: Record<string, string> = {
   dashcams: "dash[\\s\\-]?cam",
@@ -68,7 +74,7 @@ const cityState = (v: string): [string, string] => {
   return [city, state];
 };
 
-function priceClaim(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
+function priceClaim(b: string, f: BrandFacts, s: string, sentence: string, out: Found[]) {
   if (f.starting_price_usd === undefined || PRICE_RANGE.test(s)) return;
   const m = PRICE.exec(s);
   if (!m?.groups) return;
@@ -87,7 +93,7 @@ function priceClaim(b: string, f: BrandFacts, s: string, sentence: string, out: 
   });
 }
 
-function hqClaim(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
+function hqClaim(b: string, f: BrandFacts, s: string, sentence: string, out: Found[]) {
   if (!f.hq) return;
   const m = HQ.exec(s);
   if (!m) return;
@@ -100,7 +106,7 @@ function hqClaim(b: string, f: BrandFacts, s: string, sentence: string, out: Cla
   out.push({ brand: b, factKey: "hq", claimed, actual: f.hq, sentence, wrong });
 }
 
-function foundedClaim(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
+function foundedClaim(b: string, f: BrandFacts, s: string, sentence: string, out: Found[]) {
   if (f.founded === undefined) return;
   const m = FOUNDED.exec(s);
   if (!m) return;
@@ -115,7 +121,7 @@ function foundedClaim(b: string, f: BrandFacts, s: string, sentence: string, out
   });
 }
 
-function integrationClaims(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
+function integrationClaims(b: string, f: BrandFacts, s: string, sentence: string, out: Found[]) {
   if (!f.integrations) return;
   const known = f.integrations.map((i) => i.toLowerCase());
   for (const m of s.matchAll(INTEGRATES)) {
@@ -156,7 +162,7 @@ function clauseBefore(before: string): string {
   return before.slice(from);
 }
 
-function featureClaims(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
+function featureClaims(b: string, f: BrandFacts, s: string, sentence: string, out: Found[]) {
   const feats = f.features;
   if (!feats) return;
   let scrubbed = s;
@@ -200,13 +206,18 @@ export function extractClaims(segs: Segment[], settings: Settings): Claim[] {
     // a sentence that also names another company: we can't be sure who the claim is about
     if (seg.brands.some((x) => x !== b)) continue;
     // match on straight apostrophes, but keep the sentence exactly as the AI wrote it
-    const sentence = stripLabel(seg.text).trim();
+    const stripped = stripLabel(seg.text);
+    const sentence = stripped.trim();
+    // the label is a prefix, so the sentence ends where the segment's trimmed text ends
+    const start = seg.start + seg.text.length - stripped.trimStart().length;
     const s = sentence.replace(/[\u2018\u2019]/g, "'");
-    priceClaim(b, f, s, sentence, claims);
-    hqClaim(b, f, s, sentence, claims);
-    foundedClaim(b, f, s, sentence, claims);
-    integrationClaims(b, f, s, sentence, claims);
-    featureClaims(b, f, s, sentence, claims);
+    const found: Found[] = [];
+    priceClaim(b, f, s, sentence, found);
+    hqClaim(b, f, s, sentence, found);
+    foundedClaim(b, f, s, sentence, found);
+    integrationClaims(b, f, s, sentence, found);
+    featureClaims(b, f, s, sentence, found);
+    for (const c of found) claims.push({ ...c, start, end: start + sentence.length });
   }
   const seen = new Set<string>();
   return claims.filter((c) => {

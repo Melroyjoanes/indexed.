@@ -32,7 +32,7 @@ Other commands:
 ```bash
 npm run export       # writes out/mentions.csv and out/wrong_facts.csv
 npm run accuracy     # prints the accuracy check below
-npm run check        # lint, type check and the 219 tests
+npm run check        # lint, type check and the 263 tests
 ```
 
 **A new week** is just another file. Drop `week7.jsonl` into `data/` and it's picked up on the next page load, or upload it on the Data page to try it in your browser first. Field names, engine names and date formats that differ between exports are handled, so small format changes don't need code changes.
@@ -102,7 +102,7 @@ The commit history follows this order: 13 pull requests, each through CI.
 - If a sentence names two companies, no fact claim is taken from it.
 - A company named without a verdict is "mentioned" (neutral).
 - In a table, the last column is the verdict ("Top pick" is recommended, "Skip at your size" is advised against).
-- `claim_text` is the whole sentence, without list markers or `[1]` footnotes.
+- `claim_text` is the whole sentence copied exactly from the raw answer, including any `[1]` footnotes or `&amp;` entities, without the list marker or bold label in front of it. Detection reads a cleaned copy; the export maps the match back to the original text.
 - No site in this data is cited only next to competitors, so Sources also flags sites where a competitor is named more often than Corvane.
 
 ---
