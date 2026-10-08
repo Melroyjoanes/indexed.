@@ -52,7 +52,14 @@ export interface Dataset {
 
 type State = { ok: true; base: Results; scoring: Scoring } | { ok: false; error: string };
 
+export interface UploadActions {
+  add: (files: SourceFile[]) => string | null; // an error message, or null on success
+  clear: () => void;
+  source: "saved" | "upload";
+}
+
 const Ctx = createContext<Dataset | null>(null);
+const UploadCtx = createContext<UploadActions | null>(null);
 const ErrCtx = createContext<string | null>(null);
 
 function compute(files: SourceFile[]): State {
@@ -90,6 +97,23 @@ export function DatasetProvider({ files, children }: { files: SourceFile[]; chil
     [params, pathname, router],
   );
 
+  // Uploading must work even when the saved data is missing or unreadable,
+  // so these live outside the loaded dataset.
+  const upload = useMemo<UploadActions>(
+    () => ({
+      add: (more) => {
+        const next = [...(uploaded ?? files).filter((f) => !more.some((m) => m.name === f.name)), ...more];
+        const check = compute(next);
+        if (!check.ok) return check.error;
+        uploadStore.write(JSON.stringify(next));
+        return uploadStore.read() ? null : "The files are too large to keep in this browser tab.";
+      },
+      clear: () => uploadStore.write(null),
+      source: uploaded ? "upload" : "saved",
+    }),
+    [uploaded, files],
+  );
+
   const value = useMemo<Dataset | null>(() => {
     if (!state.ok) return null;
     const { base, scoring } = state;
@@ -112,20 +136,16 @@ export function DatasetProvider({ files, children }: { files: SourceFile[]; chil
       source: uploaded ? "upload" : "saved",
       setWeek: (w) => setParam("week", w === scoring.weeks[scoring.weeks.length - 1] ? null : String(w)),
       setClient: (k) => setParam("as", k === base.pack.settings.client ? null : k),
-      useUpload: (more) => {
-        const next = [...(uploaded ?? files).filter((f) => !more.some((m) => m.name === f.name)), ...more];
-        const check = compute(next);
-        if (!check.ok) return check.error;
-        uploadStore.write(JSON.stringify(next));
-        return uploadStore.read() ? null : "The files are too large to keep in this browser tab.";
-      },
-      clearUpload: () => uploadStore.write(null),
+      useUpload: upload.add,
+      clearUpload: upload.clear,
     };
-  }, [state, params, setParam, uploaded, files]);
+  }, [state, params, setParam, uploaded, upload]);
 
   return (
     <ErrCtx.Provider value={state.ok ? null : state.error}>
-      <Ctx.Provider value={value}>{children}</Ctx.Provider>
+      <UploadCtx.Provider value={upload}>
+        <Ctx.Provider value={value}>{children}</Ctx.Provider>
+      </UploadCtx.Provider>
     </ErrCtx.Provider>
   );
 }
@@ -143,4 +163,11 @@ export function useMaybeDataset(): Dataset | null {
 
 export function useDatasetError(): string | null {
   return useContext(ErrCtx);
+}
+
+/** Add or clear an upload. Works whether or not the saved data loaded. */
+export function useUploadActions(): UploadActions {
+  const u = useContext(UploadCtx);
+  if (!u) throw new Error("useUploadActions must be used inside DatasetProvider");
+  return u;
 }
