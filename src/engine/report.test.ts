@@ -108,6 +108,9 @@ describe("report content", () => {
       "4 answers say Corvane was founded in 2009. In fact, it was 2014.",
     ]);
     expect(r.factsHistory).toHaveLength(2);
+    expect(r.factsHistory[1]?.claim).toBe(
+      "Corvane is based in Columbus, Georgia. In fact, it's in Columbus, Ohio.",
+    );
     expect(r.factsHistory[1]?.detail).toBe("Not seen this week, last seen in week 1");
   });
 

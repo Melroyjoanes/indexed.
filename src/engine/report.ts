@@ -90,6 +90,8 @@ export interface ReportScoreRow {
 export interface ReportFact {
   /** "8 answers say Corvane is based in Chicago. In fact, it's in Columbus, Ohio." */
   text: string;
+  /** "Corvane is based in Chicago. In fact, it's in Columbus, Ohio." */
+  claim: string;
   /** "2 this week, first seen in week 3" */
   detail: string;
   thisWeek: number;
@@ -187,6 +189,7 @@ export function reportContent(res: Results, sc: Scoring, week: number): ReportCo
 
   const facts: ReportFact[] = brief.facts.map((f) => ({
     text: `${howMany(f.answers, f.claim)}. In fact, ${f.truth}.`,
+    claim: `${capital(f.claim)}. In fact, ${f.truth}.`,
     detail:
       f.thisWeek > 0
         ? `${f.thisWeek} this week, first seen in week ${f.firstWeek}`
