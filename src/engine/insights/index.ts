@@ -6,3 +6,4 @@ export * from "./coverage";
 export * from "./facts";
 export * from "./sources";
 export * from "./words";
+export * from "./rivals";
