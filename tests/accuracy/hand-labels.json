@@ -1,0 +1,53 @@
+{
+  "$comment": "Hand labels for the 15 answers drawn by tests/accuracy/sample.ts (seed 15). Each answer lists every company mentioned with its position and tone; companies not listed are not mentioned. Labelled by reading the answer, without looking at the tool's output.",
+  "labels": {
+    "r_e967478bef8a": {
+      "novahaul": [1, "neutral"],
+      "gridwell": [2, "neutral"],
+      "routelyne": [3, "neutral"],
+      "fleetora": [4, "neutral"],
+      "trakvia": [5, "neutral"]
+    },
+    "r_3547cb3c0abc": {},
+    "r_07cc4ca2a168": {
+      "trakvia": [1, "negative"],
+      "gridwell": [2, "neutral"],
+      "routelyne": [3, "recommended"]
+    },
+    "r_a67f33638775": { "novahaul": [1, "neutral"], "fleetora": [2, "neutral"] },
+    "r_0e7279be82e1": {
+      "trakvia": [1, "negative"],
+      "gridwell": [2, "recommended"],
+      "novahaul": [3, "recommended"]
+    },
+    "r_45c06d07e851": { "gridwell": [1, "recommended"], "corvane": [2, "negative"] },
+    "r_78ca2f29e180": {
+      "novahaul": [1, "recommended"],
+      "corvane": [2, "recommended"],
+      "gridwell": [3, "neutral"]
+    },
+    "r_cfb0f711032e": { "novahaul": [1, "neutral"] },
+    "r_62eed69dc265": { "trakvia": [1, "recommended"], "routelyne": [2, "negative"] },
+    "r_8da19479bde4": { "trakvia": [1, "recommended"], "gridwell": [2, "recommended"] },
+    "r_8c9c23c0de29": { "routelyne": [1, "negative"], "corvane": [2, "neutral"] },
+    "r_d97d861eb8df": { "fleetora": [1, "neutral"], "novahaul": [2, "recommended"] },
+    "r_26bc1ebaaf74": {
+      "routelyne": [1, "recommended"],
+      "trakvia": [2, "recommended"],
+      "novahaul": [3, "recommended"],
+      "fleetora": [4, "neutral"]
+    },
+    "r_3cdb8045dfc9": {
+      "routelyne": [1, "recommended"],
+      "corvane": [2, "recommended"],
+      "trakvia": [3, "neutral"],
+      "novahaul": [4, "neutral"],
+      "gridwell": [5, "neutral"]
+    },
+    "r_0ae70f2aa206": {
+      "corvane": [1, "recommended"],
+      "gridwell": [2, "neutral"],
+      "trakvia": [3, "negative"]
+    }
+  }
+}

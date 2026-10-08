@@ -1,0 +1,10 @@
+{
+  "mentionsSha256": "cbfe70e0542364ff98c8eeb48faa7ee32b2f92eb51bfdc7a428af04bffc8cf84",
+  "wrongFactsSha256": "0888a6f8a2f3d7ad68f1cce166192b2599d075a855e1699a7d77738d306317c5",
+  "pack": {
+    "lines": 518,
+    "answers": 510,
+    "duplicates": 8,
+    "failed": 3
+  }
+}
