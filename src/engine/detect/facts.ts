@@ -53,7 +53,7 @@ const cityState = (v: string): [string, string] => {
   return [city, state];
 };
 
-function priceClaim(b: string, f: BrandFacts, s: string, out: Claim[]) {
+function priceClaim(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
   if (f.starting_price_usd === undefined || PRICE_RANGE.test(s)) return;
   const m = PRICE.exec(s);
   if (!m) return;
@@ -64,12 +64,12 @@ function priceClaim(b: string, f: BrandFacts, s: string, out: Claim[]) {
     factKey: "starting_price_usd",
     claimed: String(val),
     actual: String(actual),
-    sentence: s,
+    sentence,
     wrong: Math.abs(val - actual) > 0.5,
   });
 }
 
-function hqClaim(b: string, f: BrandFacts, s: string, out: Claim[]) {
+function hqClaim(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
   if (!f.hq) return;
   const m = HQ.exec(s);
   if (!m) return;
@@ -79,10 +79,10 @@ function hqClaim(b: string, f: BrandFacts, s: string, out: Claim[]) {
   const wrong =
     city === aState && !state ? false : city !== aCity || (state !== "" && state !== aState);
   const claimed = m[1]!.replace(/\.+$/, "") + (m[2] ? `, ${m[2]}` : "");
-  out.push({ brand: b, factKey: "hq", claimed, actual: f.hq, sentence: s, wrong });
+  out.push({ brand: b, factKey: "hq", claimed, actual: f.hq, sentence, wrong });
 }
 
-function foundedClaim(b: string, f: BrandFacts, s: string, out: Claim[]) {
+function foundedClaim(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
   if (f.founded === undefined) return;
   const m = FOUNDED.exec(s);
   if (!m) return;
@@ -92,12 +92,12 @@ function foundedClaim(b: string, f: BrandFacts, s: string, out: Claim[]) {
     factKey: "founded",
     claimed: String(yr),
     actual: String(f.founded),
-    sentence: s,
+    sentence,
     wrong: yr !== Number(f.founded),
   });
 }
 
-function integrationClaims(b: string, f: BrandFacts, s: string, out: Claim[]) {
+function integrationClaims(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
   if (!f.integrations) return;
   const known = f.integrations.map((i) => i.toLowerCase());
   for (const m of s.matchAll(INTEGRATES)) {
@@ -112,14 +112,14 @@ function integrationClaims(b: string, f: BrandFacts, s: string, out: Claim[]) {
         factKey: "integrations",
         claimed: (negated ? "not " : "") + name,
         actual: f.integrations.join(", "),
-        sentence: s,
+        sentence,
         wrong: negated ? listed : !listed,
       });
     }
   }
 }
 
-function featureClaims(b: string, f: BrandFacts, s: string, out: Claim[]) {
+function featureClaims(b: string, f: BrandFacts, s: string, sentence: string, out: Claim[]) {
   const feats = f.features;
   if (!feats) return;
   let scrubbed = s;
@@ -145,7 +145,7 @@ function featureClaims(b: string, f: BrandFacts, s: string, out: Claim[]) {
         factKey: `features.${key}`,
         claimed: String(claimed),
         actual: String(Boolean(feats[key])),
-        sentence: s,
+        sentence,
         wrong: claimed !== Boolean(feats[key]),
       });
       break;
@@ -162,12 +162,14 @@ export function extractClaims(segs: Segment[], settings: Settings): Claim[] {
     if (!f) continue;
     // a sentence that also names another company: we can't be sure who the claim is about
     if (seg.brands.some((x) => x !== b)) continue;
-    const s = stripLabel(seg.text).trim();
-    priceClaim(b, f, s, claims);
-    hqClaim(b, f, s, claims);
-    foundedClaim(b, f, s, claims);
-    integrationClaims(b, f, s, claims);
-    featureClaims(b, f, s, claims);
+    // match on straight apostrophes, but keep the sentence exactly as the AI wrote it
+    const sentence = stripLabel(seg.text).trim();
+    const s = sentence.replace(/[\u2018\u2019]/g, "'");
+    priceClaim(b, f, s, sentence, claims);
+    hqClaim(b, f, s, sentence, claims);
+    foundedClaim(b, f, s, sentence, claims);
+    integrationClaims(b, f, s, sentence, claims);
+    featureClaims(b, f, s, sentence, claims);
   }
   const seen = new Set<string>();
   return claims.filter((c) => {
