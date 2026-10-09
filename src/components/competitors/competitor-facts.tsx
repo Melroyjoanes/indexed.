@@ -4,7 +4,7 @@ import { WarningIcon } from "@phosphor-icons/react";
 import { AnswersSheet } from "@/components/answers/answers-sheet";
 import { useDataset } from "@/components/data/dataset-provider";
 import { engineLabel } from "@/engine/config";
-import { howMany, listOf, type FactAlert } from "@/engine/insights";
+import { factCounts, listOf, type FactAlert } from "@/engine/insights";
 import { Dot } from "./parts";
 
 const cap = (t: string) => `${t.charAt(0).toUpperCase()}${t.slice(1)}`;
@@ -43,15 +43,14 @@ export function CompetitorFacts({
                     className="text-tone-not-recommended mt-1 size-4 shrink-0"
                   />
                   <span className="leading-snug">
-                    <span className="block font-medium">{howMany(f.answers, f.claim)}.</span>
+                    <span className="block font-medium">{factCounts(f, week).lead}.</span>
                     <span className="block">{cap(f.truth)}.</span>
                   </span>
                 </span>
                 <span className="text-muted-foreground mt-auto flex items-center gap-2 text-xs">
                   <Dot color={colors[f.brand]} className="size-2" />
                   <span>
-                    {f.thisWeek > 0 ? `${f.thisWeek} this week` : `Last seen week ${f.lastWeek}`}
-                    {f.firstWeek === week ? ", new this week" : ""}. On{" "}
+                    {factCounts(f, week).history}. On{" "}
                     {listOf(f.engines.map((e) => engineLabel(s, e)))}.
                   </span>
                 </span>
