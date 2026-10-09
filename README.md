@@ -32,7 +32,7 @@ Other commands:
 ```bash
 npm run export       # writes out/mentions.csv and out/wrong_facts.csv
 npm run accuracy     # prints the accuracy check below
-npm run check        # lint, type check and the 269 tests
+npm run check        # lint, type check and the 277 tests
 ```
 
 **A new week** is just another file. Drop `week7.jsonl` into `data/` and it's picked up on the next page load, or upload it on the Data page to try it in your browser first. Field names, engine names and date formats that differ between exports are handled, so small format changes don't need code changes.
@@ -75,7 +75,7 @@ Companies, spellings, look-alikes, AI tool names and score weights all live in `
 
 The brief says the scoring files are checked against an answer key, on data we haven't seen. So the order was:
 
-1. **Reading the data correctly**, then **detection**, before any screen. Detection was checked row by row against a reference implementation: all 3,060 mention rows and all 95 wrong facts are identical.
+1. **Reading the data correctly**, then **detection**, before any screen. Detection was compared row by row with an earlier, separately written implementation: all 3,060 mention rows and all 95 wrong facts agree. Agreement between two implementations catches bugs in either one, but it doesn't prove both are right.
 2. **Proof before interface.** The export, the accuracy checks and a regression lock (a fingerprint of both scoring files that fails the tests if any row changes) went in before any UI work, so no screen can quietly change a number.
 3. **The score and Marcus's weekly view**, because that's the core of what he asked for.
 4. **The stretch items, built in parallel** once the engine was stable: Priya's question view, head-to-head, competitor facts, sources, the board report, the method page and uploads.
@@ -109,31 +109,38 @@ The commit history follows this order: 13 pull requests, each through CI.
 
 ## Accuracy
 
-**15 random answers, checked by hand.** They're drawn with a seeded shuffle (seed 15, `tests/accuracy/sample.ts`), so anyone gets the same 15. The labels are in `tests/accuracy/hand-labels.json`; the answer text isn't committed, because it's client data.
+There are three different kinds of evidence here, and they say different things.
 
-|                                     | Result  |
-| ----------------------------------- | ------- |
-| Mentions (15 answers × 6 companies) | 90 / 90 |
-| Positions                           | 39 / 39 |
-| Tone                                | 39 / 39 |
+**1. Agreement with labelled answers (sample pack).** 15 answers are drawn with a seeded shuffle (seed 15, `tests/accuracy/sample.ts`), so anyone gets the same 15. Their labels are in `tests/accuracy/hand-labels.json`; the answer text isn't committed, because it's client data. The labels were drafted by Claude Code from the answer text, before the tool's output for those answers was compared, and **haven't yet been reviewed by a person**. The file records who labelled them and who reviewed them.
 
-The sample includes an answer that only mentions Corvane Logistics, a five-company list with a fact claim, and "expensive at first. Even so, I'd pick it". A test fails if the tool ever disagrees with these labels, so this number can't drift.
+|                                     | Agreement |
+| ----------------------------------- | --------- |
+| Mentions (15 answers × 6 companies) | 90 / 90   |
+| Positions                           | 39 / 39   |
+| Tone                                | 39 / 39   |
 
-**Wrong facts.** All 95 claims flagged in the sample pack match the full list of factual sentences in the data, and every `claim_text` appears word for word in its answer.
+The rules were written after reading the sample pack, so this is the best case, not an estimate for new data.
 
-**Where it's weaker.** The sample answers follow recognisable patterns and the rules were written after reading them, so the result above is the best case. I also tested sentences in wording the data never uses (`tests/accuracy/unseen-wording.ts`):
+**2. A fresh evaluation.** `tests/accuracy/held-out-3.ts` was written before it was ever run against the rules and hasn't been used to tune them.
 
-| New wording                                                    | Result     |
-| -------------------------------------------------------------- | ---------- |
-| Mentions (hyphens, `www.`, new misspellings, the look-alike)   | 6 / 6      |
-| Wrong facts ("charges $35 to start", "connects to QuickBooks") | 6 / 6      |
-| Tone, on a set written after the rules were final              | **6 / 12** |
+|                                                    | Result |
+| -------------------------------------------------- | ------ |
+| Tone                                               | 8 / 12 |
+| … misses that fell back to "mentioned"             | 4 of 4 |
+| … praise read as criticism, or the reverse         | 0      |
+| Wrong facts found in contradicting sentences       | 3 / 4  |
+| False contradictions                               | 0      |
+| True or uncovered statements left alone (controls) | 4 / 4  |
 
-Direct advice ("For this buyer, choose X", "do not choose X") is read as a verdict, and negations written as contractions ("isn't something I'd suggest") are recognised.
+These are small samples, so they show the kind of mistakes to expect rather than a precise rate. On this set, missing a verdict was the only tone error, and the one missed fact was a price phrased as "pricing begins at". Earlier held-out sets measured 5 / 12 and 4 / 12 on first run; both have been seen since, so they now only serve as regressions (below).
 
-When tone is wrong on new wording, it almost always falls back to "mentioned" rather than flipping the verdict ("a sensible budget option" reads as mentioned, not recommended). A test enforces that it never turns praise into criticism. If new data uses the same patterns, I'd expect results close to the hand check. If it's freely written, mentions and facts should hold up and tone will be closer to half right.
+**3. Regression checks.** These say the output hasn't changed, not that it's right:
 
-`npm run accuracy` prints all of this.
+- A fingerprint (SHA-256) of both scoring files from the sample pack fails the tests if a single row changes (`tests/golden.test.ts`).
+- Development sentences in new wording (`tests/accuracy/unseen-wording.ts`) are asserted exactly, including true statements and uncovered claims that must not be flagged, and 24 seen tone sentences are checked for flipped verdicts.
+- End-to-end tests check that every exported `claim_text` is an exact substring of its raw answer, footnotes and HTML entities included.
+
+**What runs where.** Public CI has no data pack, so the label-agreement and fingerprint tests are skipped there and CI covers everything else. With the pack in `data/`, `npm test` runs them too, and `npm run accuracy -- --write` saves `tests/accuracy/REPORT.md`, which records the commit and a fingerprint of the pack so each result can be tied to the code and data it came from.
 
 ---
 
@@ -149,7 +156,7 @@ Things that went wrong and were caught:
 - **A pull request was merged before CI had registered its check.** CI was green, but from then on a helper waited for checks to exist and pass before merging.
 - **All four parallel agents hit a usage limit mid-task** and were resumed where they stopped.
 - **Reviewing the screens together found real bugs.** With no data loaded there was no way to upload any. AI tools were listed in a different order on two screens. Phones had no company switch. All fixed in #12.
-- **The first tone accuracy on new wording looked better than it was**, because the rules had been tuned on those same sentences. A fresh, untuned set gave the honest 5 / 12 at the time (6 / 12 after the contraction fix below).
+- **The first tone accuracy on new wording looked better than it was**, because the rules had been tuned on those same sentences. A fresh, untuned set gave 5 / 12 at the time. Each later fix was measured on a new set written before the fix was run, since a set stops being fresh once it has been looked at.
 - **A test week uploaded through the app exposed missed direct advice** ("choose X") and a negation bug: "isn't" was never recognised, because there's no word boundary inside a contraction. Both fixed, with unit tests.
 
 ---

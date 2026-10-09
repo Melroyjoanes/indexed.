@@ -1,7 +1,13 @@
 /**
- * The hand check reported in the README. Skipped without ./data. If a change
- * makes the tool disagree with the hand labels, this fails, and the README's
- * accuracy section has to be updated honestly rather than drifting.
+ * Agreement with the committed labels for the 15-answer sample (see
+ * hand-labels.json for who labelled them). If a change makes the tool
+ * disagree with a label, this fails and the README has to be updated rather
+ * than drifting.
+ *
+ * Skipped without ./data: the sample pack is client data and isn't in the
+ * repository, so public CI can't run it. Run `npm test` and
+ * `npm run accuracy -- --write` locally with the pack in place; the report
+ * records the commit and a fingerprint of the pack.
  */
 import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -13,7 +19,7 @@ import { drawSample } from "./sample";
 
 const hasData = existsSync("data/responses.jsonl");
 
-describe.skipIf(!hasData)("15-answer hand check", () => {
+describe.skipIf(!hasData)("agreement with the 15 committed labels (needs ./data)", () => {
   const res = hasData ? runPack(loadPackFromDir("data")) : null;
   const labels = hand.labels as unknown as Labels;
 

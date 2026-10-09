@@ -3,8 +3,10 @@
  *
  * The sample answers follow recognisable patterns, so a perfect score on them
  * says little about new data. These estimate how the rules cope with new
- * phrasing. FRESH_TONE was written after the rules were final and is
- * reported as-is; it is never used to tune them.
+ * phrasing. MENTIONS and FACTS are development regressions: they were written
+ * alongside the rules and are asserted exactly. FRESH_TONE was written after
+ * the rules were final and first reported as-is; it has been seen since, so it
+ * now only guards against regressions (see held-out-3.ts for the fresh set).
  */
 import type { Tone } from "@/engine/types";
 
@@ -17,13 +19,22 @@ export const MENTIONS: [string, string, boolean][] = [
   ["Our fleet uses route planning daily.", "routelyne", false],
 ];
 
-export const FACTS: [string, string][] = [
-  ["Corvane Fleet is solid. Its headquarters are in Dayton, Ohio.", "corvane:hq"],
-  ["Corvane Fleet charges $35 per truck per month to start.", "corvane:starting_price_usd"],
-  ["Corvane Fleet has been in business since 2011.", "corvane:founded"],
-  ["Corvane Fleet lacks fuel card support.", "corvane:features.fuel_card_integration"],
-  ["Corvane Fleet now comes with payroll built in.", "corvane:features.payroll"],
-  ["Trakvia connects to QuickBooks out of the box.", "trakvia:integrations"],
+/** Exact contradictions expected; an empty list is a negative control. */
+export const FACTS: [string, string[]][] = [
+  ["Corvane Fleet is solid. Its headquarters are in Dayton, Ohio.", ["corvane:hq"]],
+  ["Corvane Fleet charges $35 per truck per month to start.", ["corvane:starting_price_usd"]],
+  ["Corvane Fleet has been in business since 2011.", ["corvane:founded"]],
+  ["Corvane Fleet lacks fuel card support.", ["corvane:features.fuel_card_integration"]],
+  ["Corvane Fleet now comes with payroll built in.", ["corvane:features.payroll"]],
+  ["Trakvia connects to QuickBooks out of the box.", ["trakvia:integrations"]],
+  // true statements
+  ["Corvane Fleet is headquartered in Columbus, Ohio.", []],
+  ["Corvane Fleet starts at $29 per vehicle per month.", []],
+  ["Corvane Fleet was founded in 2014.", []],
+  ["Trakvia integrates with Salesforce.", []],
+  // claims the fact sheet doesn't cover
+  ["Corvane Fleet has a 4.6-star rating on G2.", []],
+  ["Corvane Fleet serves over 3,000 customers.", []],
 ];
 
 export const FRESH_TONE: [string, string, Tone][] = [
