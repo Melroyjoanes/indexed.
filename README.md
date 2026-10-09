@@ -32,7 +32,7 @@ Other commands:
 ```bash
 npm run export       # writes out/mentions.csv and out/wrong_facts.csv
 npm run accuracy     # prints the accuracy check below
-npm run check        # lint, type check and the 321 tests
+npm run check        # lint, type check and the 322 tests
 ```
 
 **A new week** is just another file. Drop `week7.jsonl` into `data/` and it's picked up on the next page load, or upload it on the Data page to try it in your browser first. Supported field aliases, AI tool names and date formats are normalised automatically. Structures the loader doesn't recognise are reported on the Data page and left out of scores; supporting a genuinely new export format needs a parser update.
