@@ -67,7 +67,7 @@ The week is picked once, in the header, and every screen follows it. Nothing aft
 
 **Real change or noise.** Each question was asked twice per AI tool per week, and the two answers often differ. That difference is the yardstick: a change only counts as clear when it's more than twice the usual gap between two runs. Weeks are compared only on the questions and AI tools both have, so week 5's missing Perplexity answers don't look like a drop. Week to week, nothing in this data is a clear change. Since week 3, though, Corvane is down 12 points (47 to 35), which is.
 
-Companies, spellings, look-alikes, AI tool names and score weights all live in `config/tracker.json`. Adding a competitor is a config change.
+Companies, spellings, look-alikes, AI tool names and score weights all live in `config/tracker.json`. Adding a competitor is a config change. The field names the loader accepts are structural and live in code (`FIELDS` in `src/engine/ingest.ts`).
 
 ---
 
@@ -81,7 +81,7 @@ The brief says the scoring files are checked against an answer key, on data we h
 4. **The stretch items, built in parallel** once the engine was stable: Priya's question view, head-to-head, competitor facts, sources, the board report, the method page and uploads.
 5. **Deployment and docs last**, so every number here is final.
 
-The commit history follows this order: 13 pull requests, each through CI.
+The commit history follows this order. Each change went in as a pull request that had to pass CI before merging.
 
 **What I chose not to do**
 
@@ -161,25 +161,65 @@ Things that went wrong and were caught:
 
 ---
 
-## Running this every day for 20 clients
+## Running this every day for 20 clients (proposed)
 
-**Cost.** Collecting answers is the cost: 15 questions × 3 AI tools × 2 runs is 90 requests per client per day, about 1,800 a day for 20 clients. At typical API prices for short answers that's in the low hundreds of dollars a month. The analysis is free; the full sample pack takes about a second.
+This is a design, not something built here. The repository analyses answers it's given; it doesn't collect them.
 
-**Storage.** Raw answers are kept exactly as received in file storage (Supabase Storage or S3), one file per client per day and never edited, so everything can be re-run when the rules improve. Results go into Postgres. That's about 540 rows per client per day, or roughly 4 million a year for 20 clients, which is small.
+**What gets collected, and how.** The brief measures what buyers see in three consumer products, and a model API is not the same thing as the product. So each AI tool needs its own route, chosen to stay as close as possible to what a buyer sees:
 
-**Running it.** One scheduled job a day per client: collect, analyse, save, then refresh the dashboard and the Monday summary. Each client is a config file and a fact sheet, so adding one needs no code.
+| AI tool             | What buyers see                               | Collection route                                                                                                                                                                          |
+| ------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ChatGPT             | The ChatGPT app answering with web search     | The OpenAI API with web search turned on. Closest available match, not identical to the app; checked weekly against a few answers taken by hand.                                          |
+| Perplexity          | Perplexity's answer with citations            | Perplexity's own API, which returns answers and citations from its search.                                                                                                                |
+| Google AI Overviews | The AI Overview above Google's search results | No official API. A search-results provider that returns the AI Overview block, or a headless browser. Not every search shows an Overview, so "none shown" is recorded as its own outcome. |
 
-**When an AI tool changes its format.** It already happened in this data (week 4). The loader maps field names by alias, so most changes are one line of config. For the ones that slip through, three things:
+Each answer is stored with the route it came from, so a change of route shows up as a change in the data rather than in the market.
 
-- Unreadable or empty answers are counted on every load, and an alert fires when that count jumps.
-- The share of answers that mention no company at all is watched; a sudden spike usually means the text has moved to a field we're not reading.
-- Raw files are kept, so the affected days can be re-run once the loader is fixed.
+**Workload.** 15 questions × 3 AI tools × 2 runs = 90 requests per client per day, 1,800 a day for 20 clients, about 54,000 a month.
+
+**Cost**, as a formula to fill in with real quotes:
+
+```
+monthly ≈ 54,000 × (1 + retry rate) × cost per collected answer
+        + storage + database + scheduled jobs + monitoring
+```
+
+- **Cost per collected answer** depends on the route and is the number to get quoted first. Each $0.01 per answer adds about $540 a month at this volume, so $0.01 to $0.03 is $540 to $1,620, before retries.
+- **Retries:** plan for 10% (failed requests showed up in the sample pack), so multiply by 1.1.
+- **Storage** is small. Raw answers in the sample pack average about 680 bytes, so 1,800 a day is about 1.2 MB a day, or 450 MB a year. Results are 540 rows per client per day, roughly 4 million rows a year for 20 clients.
+- **Compute** is small too. Analysing and scoring all 510 sample answers takes about 0.1 seconds on a laptop, so analysis isn't a meaningful cost. The bigger compute cost is the headless browser, if that's the route for Google.
+- **Monitoring and alerts** fit the free or entry tiers of most hosted tools at this size.
+
+**How it would run.**
+
+- **Tenant isolation.** Each client has its own folder of raw files and its own rows, keyed by client id, with database row-level security, so one client's data can never appear in another's dashboard.
+- **Raw files are immutable.** Every answer is written once, exactly as received, to `raw/<client>/<date>/<engine>/<prompt>-<run>.json`, and never edited. Everything else is derived from them.
+- **Retention.** Raw files are kept for as long as the client contract says (assumed 24 months), then deleted; derived results can be rebuilt from what's kept.
+- **Idempotent retries.** The file path above is the job's key, so a retried request overwrites nothing and a rerun of a finished day does nothing.
+- **Schema versions.** Each raw file records the route and the format version of the response. The loader reads by version.
+- **Quarantine.** A response in a shape the loader doesn't recognise (no text field, an unknown engine name) is set aside with an alert instead of being scored as "not mentioned", so a format change can't look like a drop in visibility.
+- **Replay.** Once the loader or a rule is fixed, the affected days are re-run from the raw files, and the result tables are replaced for those days only.
+
+**When an AI tool changes its format.** It already happened in this data (week 4). There are two kinds of alias, kept in different places:
+
+- **Company and AI tool names** (`"Corvain"`, `"AI Overview"`) are configuration, in `config/tracker.json`. Adding one needs no code.
+- **Field names** (`response_text` vs `answer`, `run` vs `run_number`) are structural and live in code, in `FIELDS` in `src/engine/ingest.ts`. Adding one is a one-line code change with a test.
+
+Alerts fire when unreadable or empty answers jump, or when the share of answers naming no company at all spikes, which usually means the text has moved to a field we're not reading.
 
 ---
 
 ## Hosting
 
-The live version runs on Vercel. It reads the data pack from a private Supabase Storage bucket at request time; the key is a server-only environment variable and never reaches the browser. Uploads on the Data page stay in the visitor's browser tab. Running locally needs none of this.
+The live version runs on Vercel. It reads the data pack at request time from a private Supabase Storage bucket, using these server-only environment variables:
+
+| Variable              | What it is                                                  |
+| --------------------- | ----------------------------------------------------------- |
+| `SUPABASE_URL`        | The Supabase project URL                                    |
+| `SUPABASE_SECRET_KEY` | A secret key with read access to Storage                    |
+| `SUPABASE_BUCKET`     | Optional. The bucket holding the pack (default `data-pack`) |
+
+To set it up: create a private bucket, upload the four data-pack files to its root, and add the variables in the Vercel project settings (or with `vercel env add`). The key never reaches the browser, and no secret is stored in this repository. Uploads on the Data page stay in the visitor's browser tab. Running locally needs none of this: without the variables, the app reads `data/`.
 
 ---
 
@@ -202,4 +242,4 @@ scripts/             export and accuracy commands
 
 ---
 
-© Indexed. All rights reserved. Shared for review only; no licence is granted to copy, modify or distribute this code.
+© 2026 Melroy Joanes. Written as a case study for Indexed's AI-Native Developer application; Corvane Fleet and its competitors are fictional. Shared for review only; no licence is granted to copy, modify or distribute this code.
