@@ -1,5 +1,7 @@
 {
-  "$comment": "Hand labels for the 15 answers drawn by tests/accuracy/sample.ts (seed 15). Each answer lists every company mentioned with its position and tone; companies not listed are not mentioned. Labelled by reading the answer, without looking at the tool's output.",
+  "$comment": "Labels for the 15 answers drawn by tests/accuracy/sample.ts (seed 15). Each answer lists every company mentioned with its position and tone; companies not listed are not mentioned.",
+  "provenance": "drafted by Claude Code (the AI assistant used to build this project) from the raw answer text, before the tool's output for these answers was compared. Not yet reviewed by a person.",
+  "reviewedBy": null,
   "labels": {
     "r_e967478bef8a": {
       "novahaul": [1, "neutral"],
@@ -14,23 +16,43 @@
       "gridwell": [2, "neutral"],
       "routelyne": [3, "recommended"]
     },
-    "r_a67f33638775": { "novahaul": [1, "neutral"], "fleetora": [2, "neutral"] },
+    "r_a67f33638775": {
+      "novahaul": [1, "neutral"],
+      "fleetora": [2, "neutral"]
+    },
     "r_0e7279be82e1": {
       "trakvia": [1, "negative"],
       "gridwell": [2, "recommended"],
       "novahaul": [3, "recommended"]
     },
-    "r_45c06d07e851": { "gridwell": [1, "recommended"], "corvane": [2, "negative"] },
+    "r_45c06d07e851": {
+      "gridwell": [1, "recommended"],
+      "corvane": [2, "negative"]
+    },
     "r_78ca2f29e180": {
       "novahaul": [1, "recommended"],
       "corvane": [2, "recommended"],
       "gridwell": [3, "neutral"]
     },
-    "r_cfb0f711032e": { "novahaul": [1, "neutral"] },
-    "r_62eed69dc265": { "trakvia": [1, "recommended"], "routelyne": [2, "negative"] },
-    "r_8da19479bde4": { "trakvia": [1, "recommended"], "gridwell": [2, "recommended"] },
-    "r_8c9c23c0de29": { "routelyne": [1, "negative"], "corvane": [2, "neutral"] },
-    "r_d97d861eb8df": { "fleetora": [1, "neutral"], "novahaul": [2, "recommended"] },
+    "r_cfb0f711032e": {
+      "novahaul": [1, "neutral"]
+    },
+    "r_62eed69dc265": {
+      "trakvia": [1, "recommended"],
+      "routelyne": [2, "negative"]
+    },
+    "r_8da19479bde4": {
+      "trakvia": [1, "recommended"],
+      "gridwell": [2, "recommended"]
+    },
+    "r_8c9c23c0de29": {
+      "routelyne": [1, "negative"],
+      "corvane": [2, "neutral"]
+    },
+    "r_d97d861eb8df": {
+      "fleetora": [1, "neutral"],
+      "novahaul": [2, "recommended"]
+    },
     "r_26bc1ebaaf74": {
       "routelyne": [1, "recommended"],
       "trakvia": [2, "recommended"],

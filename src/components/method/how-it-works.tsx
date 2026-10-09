@@ -144,7 +144,7 @@ export function HowItWorks() {
   const factCompanies = Object.keys(s.facts)
     .map((k) => s.brands[k]?.name ?? k)
     .filter(Boolean);
-  const { handCheck: hc, unseenWording: uw } = ACCURACY;
+  const { labelled: hc, fresh: fr } = ACCURACY;
   const first = facts.weeks[0];
   const last = facts.weeks[facts.weeks.length - 1];
 
@@ -368,21 +368,29 @@ export function HowItWorks() {
 
       <Section id="accuracy">
         <p>
-          {hc.answers} answers were drawn at random from the sample data and checked by hand. The
-          tool matched on all {hc.companyChecks.of} company checks (whether each company was named),
-          all {hc.positions.of} positions and all {hc.tones.of} tones.
+          {hc.answers} answers were drawn at random from the sample data and labelled from the
+          answer text
+          {hc.reviewedByPerson
+            ? " and checked by a person"
+            : " by the AI assistant used to build this, not yet reviewed by a person"}
+          . The tool agreed with those labels on all {hc.companyChecks.of} company checks (whether
+          each company was named), all {hc.positions.of} positions and all {hc.tones.of} tones. The
+          rules were written after reading the sample data, so this is the best case.
         </p>
         <p>
-          It was also tested on wording that doesn&apos;t appear in the sample data. Mentions held
-          up on {uw.mentions.right} of {uw.mentions.of} and wrong facts on {uw.wrongFacts.right} of{" "}
-          {uw.wrongFacts.of}. Tone was right on {uw.tones.right} of {uw.tones.of}. In{" "}
-          {uw.tonesMissedAsMentioned} of the {uw.tones.of - uw.tones.right} misses it fell back to
-          Mentioned rather than guessing.
+          On a fresh set of sentences in new wording, written before it was ever run, tone was right
+          on {fr.tones.right} of {fr.tones.of}. {fr.tonesMissedAsMentioned} of the{" "}
+          {fr.tones.of - fr.tones.right} misses showed as Mentioned rather than a wrong verdict, and{" "}
+          {fr.tonesFlipped} turned praise into criticism or the reverse. Wrong facts were found in{" "}
+          {fr.wrongFacts.found} of {fr.wrongFacts.of} contradicting sentences, with{" "}
+          {fr.falseContradictions} false alarms, and {fr.controls.clean} of {fr.controls.of} true or
+          unchecked statements were left alone.
         </p>
         <p>
-          In practice: who is named, and in what order, can be trusted on new data. Tone is reliable
-          on phrasing like the sample, but new ways of praising or warning against a company may
-          show as Mentioned until the tool learns them, so scores could understate strong opinions.
+          These are small samples ({fr.tones.of} and {fr.wrongFacts.of + fr.controls.of} sentences),
+          so they show the kind of mistakes to expect rather than a precise rate. The pattern so
+          far: missing a verdict is more common than inventing one, so scores are more likely to
+          understate strong opinions than overstate them.
         </p>
       </Section>
 
