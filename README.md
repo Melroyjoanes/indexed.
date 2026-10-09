@@ -223,5 +223,14 @@ scripts/             export and accuracy commands
 ```
 
 ---
+## What I would improve next
+
+I would keep the current rules-based approach as the baseline and use new examples to understand where it falls short.
+
+If the tool needed to handle more varied language while staying fully local, I would test a small model through Ollama or Transformers.js. The model trial showed that adding AI can introduce errors as well as fix them, so I would only adopt one if it improved results on unseen, human-reviewed examples and ran comfortably on the target laptop. Score calculations would stay in code.
+
+For broken or incomplete files, I would improve validation and support documented format variations, with clear messages explaining what needs fixing. I would preserve the original answers rather than rewrite them or guess missing information.
+
+As more representative data became available, I would build a human-labelled dataset covering the mistakes we actually see. That would help me compare better rules, a small trained classifier and model-assisted analysis. I would keep a separate test set untouched and report both improvements and remaining errors.
 
 © 2026 Melroy Joanes. Written as a case study for Indexed's AI-Native Developer application;
