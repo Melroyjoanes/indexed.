@@ -21,11 +21,15 @@ export interface Segment {
 const SENTENCE_BREAK =
   /(?<!\be\.g\.)(?<!\bi\.e\.)(?<!\bvs\.)(?<!\bapprox\.)(?<!\bU\.S\.)(?<!\bInc\.)(?<=[.!?])\s+(?=\S)/;
 const POINTS_BACK = new RegExp(
-  "^(?:\\W*)(?:it|its|it's|they|their|the company|the platform|the tool|this tool|" +
+  // an opening clause may come first: "For a mixed fleet, it's hard to beat"
+  "^(?:\\W*)(?:(?:if|for|but|and|so|because|when|given|at|with|even|overall|honestly|for most)\\b[^.,;]{0,80},\\s*)?" +
+    "(?:it|its|it's|they|their|the company|the platform|the tool|this tool|" +
     "note that it|even so|that said|however|still|plans|pricing|prices|expect to pay|" +
     "[a-z ]{0,25}\\bis included\\b)\\b",
   "i",
 );
+/** "complain about its contract terms": a possessive that can only mean the last company. */
+const POSSESSIVE = /\bits\b/i;
 const TABLE_DIVIDER = /^\s*\|?\s*:?-{2,}/;
 
 /** A leading "- **Label:**" or "1. **Name**:" in front of a list item. */
@@ -89,7 +93,11 @@ export function segment(text: string, masked: string, hits: Hit[]): Segment[] {
     } else if (masked.slice(seg.start, end).includes(MASK_CHAR)) {
       seg.subject = LOOKALIKE;
       last = LOOKALIKE;
-    } else if (last && last !== LOOKALIKE && POINTS_BACK.test(stripLabel(seg.text))) {
+    } else if (
+      last &&
+      last !== LOOKALIKE &&
+      (POINTS_BACK.test(stripLabel(seg.text)) || POSSESSIVE.test(seg.text))
+    ) {
       seg.subject = last;
     }
   }

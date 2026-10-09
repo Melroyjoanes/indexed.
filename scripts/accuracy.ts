@@ -90,7 +90,7 @@ if (existsSync(path.join(dataDir, "responses.jsonl"))) {
 }
 
 say();
-say(`## Fresh evaluation (held-out set 3, run once, never tuned on)`);
+say(`## Held-out set 3 (first run: tone 8 / 12, facts 3 / 4; seen since, so no longer fresh)`);
 say();
 tone("Tone", measureTone(HELD_OUT_3_TONE, s));
 facts("Wrong facts", measureFacts(HELD_OUT_3_FACTS, s));

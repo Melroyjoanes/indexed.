@@ -18,8 +18,17 @@ export interface Analysis {
 }
 
 /** Everything the tool reads from one AI answer. */
+/**
+ * A "Sources:" list written into the answer text names sites, not
+ * recommendations, so it's blanked before scanning (same length, so every
+ * position still points at the original text).
+ */
+const SOURCES_LIST = /^[ \t]*(?:\*\*)?(?:sources|references|citations)(?:\*\*)?:[\s\S]*$/im;
+export const withoutSourcesList = (text: string) =>
+  text.replace(SOURCES_LIST, (m) => m.replace(/[^\n]/g, " "));
+
 export function analyse(text: string, settings: Settings): Analysis {
-  const { hits, masked } = findMentions(text, settings);
+  const { hits, masked } = findMentions(withoutSourcesList(text), settings);
   const pos = positions(hits);
   const segments = segment(text, masked, hits);
   const { tones, evidence } = tonesFor(segments, [...pos.keys()], hits);

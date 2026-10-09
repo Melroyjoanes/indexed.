@@ -41,7 +41,7 @@ const ABOUT_THE_BUYER = [
   /\bfleets? (?:focused on|that need)[^,.;:]*/gi,
 ];
 const ASSERTS =
-  "(?:offers?|includes?|including|handles?|supports?|provides?|comes with|has|have|built[\\s\\-]in|known for|focus(?:es)? on|stands out for|thanks to|because of|with|value|need|features?)";
+  "(?:offers?|includes?|including|handles?|supports?|provides?|sends?|delivers?|comes with|has|have|built[\\s\\-]in|known for|focus(?:es)? on|stands out for|thanks to|because of|with|value|need|features?)";
 const DENIES = "(?:doesn'?t|does not|don'?t|do not|no|lacks?|without|isn'?t|not|missing|never)";
 
 /**
@@ -51,8 +51,8 @@ const DENIES = "(?:doesn'?t|does not|don'?t|do not|no|lacks?|without|isn'?t|not|
  * the fact sheet doesn't cover, so they're left alone.
  */
 const PRICE =
-  /(?<lead>start(?:s|ing)?(?: at)?|from|as low as|plans? (?:begin|start)(?: at)?|costs?|priced at|pay|charges?|charging)\s+(?:about|around|roughly|approximately|just|only|~)?\s*\$\s?(?<amount>\d+(?:\.\d+)?)(?<after>[^.;]{0,40})/i;
-const STARTING_LEAD = /^(?:start|from|as low as|plans?)/i;
+  /(?<lead>start(?:s|ing)?(?: at)?|from|as low as|(?:plans?|pricing) (?:begins?|starts?)(?: at)?|costs?|priced at|pay|charges?|charging)\s+(?:about|around|roughly|approximately|just|only|~)?\s*\$\s?(?<amount>\d+(?:\.\d+)?)(?<after>[^.;]{0,40})/i;
+const STARTING_LEAD = /^(?:start|from|as low as|plans?|pricing)/i;
 const PER_UNIT =
   /^\s*(?:\/|per|a|each|every)\s*(?:vehicle|truck|unit|asset|month|mo\b|user|driver|seat)/i;
 const OTHER_FEE =
@@ -150,7 +150,7 @@ function integrationClaims(b: string, f: BrandFacts, s: string, sentence: string
  * carries across "or" ("doesn't offer dashcams or payroll" denies both).
  */
 const CLAUSE_VERB =
-  "(?:offers?|includes?|handles?|supports?|provides?|comes with|has|have|lacks?|features?|doesn'?t|does not|don'?t|do not|isn'?t|is not)";
+  "(?:offers?|includes?|handles?|supports?|provides?|sends?|delivers?|comes with|has|have|lacks?|features?|doesn'?t|does not|don'?t|do not|isn'?t|is not)";
 const CLAUSE_START = new RegExp(
   `(?:[;:]|\\bbut\\b|(?:,\\s*|\\s+)(?:and|while|whereas|plus)\\s+(?=(?:it\\s+|also\\s+)*${CLAUSE_VERB}\\b)|,\\s+(?=(?:it\\s+|also\\s+)*${CLAUSE_VERB}\\b))`,
   "gi",

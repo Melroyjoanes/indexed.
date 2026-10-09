@@ -12,7 +12,7 @@ export const ACCURACY = {
     tones: { right: 39, of: 39 },
     reviewedByPerson: false, // labels drafted by the AI assistant; see hand-labels.json
   },
-  /** A fresh held-out set, written before it was run and never tuned on. */
+  /** Held-out set 3 on its first run, before any rule saw it. It has been seen since. */
   fresh: {
     tones: { right: 8, of: 12 },
     tonesMissedAsMentioned: 4, // of the misses, how many fell back to "Mentioned"

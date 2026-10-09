@@ -22,7 +22,7 @@ const ADVISED_AGAINST = rx([
   "isn'?t the right (?:choice|fit|option)",
   "not the right (?:choice|fit|option)",
   "probably not\\b",
-  "wouldn'?t (?:choose|recommend|pick|go with|use)",
+  "wouldn'?t (?:choose|recommend|pick|go with|use|shortlist)",
   "\\bi'?d skip\\b",
   "\\bskip (?:it|this|them)\\b",
   "\\bskip at your size\\b",
@@ -86,6 +86,7 @@ const CRITICISED = rx([
   "\\bstruggl",
   "\\bnot great\\b",
   "\\bdisappoint",
+  "\\bcrash",
 ]);
 
 const PRAISE = rx([
@@ -134,6 +135,12 @@ const PRAISE = rx([
   "\\btop choice\\b",
   "can'?t go wrong",
   "\\bstandout\\b",
+  "\\bmy first call\\b",
+  "\\b(?:i'?d|i would|would)(?: also| still| probably| definitely| personally)? (?:shortlist|lean towards?|choose|pick|recommend)\\b",
+  "\\bthe one i'?d (?:shortlist|choose|pick|go with|recommend)\\b",
+  "\\blean(?:ing)? towards?\\b",
+  "\\b(?:safer|safest|best|better) bet\\b",
+  "\\bbetter (?:pick|choice|option|fit)\\b",
 ]);
 
 /** Praise that's been negated: "not my pick", "never the best option". */
@@ -149,7 +156,7 @@ const AVOID_NAMED = /\b[Aa]void(?:ing)?\s+[A-Z]/;
  * being prevented ("helps avoid outages", "reduces downtime") is not criticism.
  */
 const NEGATOR =
-  /(?:\b(?:no|not|never|without|hardly|zero|avoid(?:s|ing)?|prevent(?:s|ing)?|reduc(?:e|es|ing)|fix(?:es|ing)?|eliminat(?:e|es|ing)|cut(?:s|ting)?)\b|n['\u2019]t\b)(?:\W+\w+){0,2}?\W+$/i;
+  /(?:\b(?:no|not|never|without|hardly|rarely|seldom|few|zero|avoid(?:s|ing)?|prevent(?:s|ing)?|reduc(?:e|es|ing)|fix(?:es|ing)?|eliminat(?:e|es|ing)|cut(?:s|ting)?)\b|n['\u2019]t\b)(?:\W+\w+){0,2}?\W+$/i;
 
 function criticised(s: string): boolean {
   for (const p of CRITICISED) {
@@ -226,6 +233,11 @@ export function tonesFor(segs: Segment[], mentioned: string[], hits: Hit[] = [])
     }
     const body = stripLabel(coded(seg, hits));
     const named = companiesIn(body);
+    if (named.length >= 2 && /\bneither\b[^.]*\bnor\b/i.test(body)) {
+      // "Neither A nor B fits, so I'd look elsewhere": one verdict about both
+      judge(named, classify(body), seg);
+      continue;
+    }
     if (named.length >= 2) {
       // e.g. "Corvane is a strong pick, but avoid Trakvia": one verdict per clause, for the
       // company that clause names (the first one if a clause names several)

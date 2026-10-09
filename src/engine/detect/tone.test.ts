@@ -178,3 +178,54 @@ describe("two companies in one sentence", () => {
     });
   });
 });
+
+describe("recommendation and complaint phrasing", () => {
+  it.each([
+    ["For a regional carrier, Corvane Fleet would be my first call.", "recommended"],
+    ["Corvane Fleet would not be my first call for long-haul work.", "not_recommended"],
+    ["Corvane Fleet is the one I'd shortlist.", "recommended"],
+    ["I wouldn't shortlist Corvane Fleet for a fleet this small.", "not_recommended"],
+    ["Between the options, I'd lean toward Corvane Fleet.", "recommended"],
+    ["Corvane Fleet is the safer bet for compliance-heavy fleets.", "recommended"],
+    ["Corvane Fleet isn't the safer bet here.", "not_recommended"],
+    ["Corvane Fleet is the better pick for mixed fleets.", "recommended"],
+    ["Users report frequent crashes in the Corvane Fleet app.", "negative"],
+    ["Corvane Fleet's app rarely crashes, even on older phones.", "neutral"],
+  ])("%s → %s", (text, expected) => {
+    expect(tone(text, "corvane")).toBe(expected);
+  });
+});
+
+describe("a pronoun after an opening clause points back to the company", () => {
+  it.each([
+    ["Corvane Fleet covers ELD. For a mixed fleet, it's hard to beat.", "recommended"],
+    [
+      "Corvane Fleet covers ELD. If you need the full stack, it's the one I'd recommend.",
+      "recommended",
+    ],
+    [
+      "Corvane Fleet covers ELD. But at that price, it's not worth it for eight vans.",
+      "not_recommended",
+    ],
+    [
+      "Corvane Fleet covers ELD. Customers frequently complain about its contract terms.",
+      "negative",
+    ],
+    ["Corvane Fleet covers ELD. For most buyers, the setup takes a day.", "neutral"],
+  ])("%s → %s", (text, expected) => {
+    expect(tone(text, "corvane")).toBe(expected);
+  });
+});
+
+describe("a verdict about neither company", () => {
+  it("applies to both", () => {
+    const t = analyse(
+      "Neither Corvane Fleet nor Trakvia fits a long-haul fleet, so I'd look elsewhere.",
+      settings,
+    ).tones;
+    expect(Object.fromEntries(t)).toMatchObject({
+      corvane: "not_recommended",
+      trakvia: "not_recommended",
+    });
+  });
+});

@@ -1,0 +1,352 @@
+{
+  "s01": {
+    "tones": {
+      "corvane": "recommended",
+      "routelyne": "neutral"
+    },
+    "wrongFacts": [],
+    "ms": 87598
+  },
+  "s02": {
+    "tones": {
+      "trakvia": "not_recommended",
+      "gridwell": "recommended"
+    },
+    "wrongFacts": [
+      {
+        "brand": "trakvia",
+        "factKey": "starting_price_usd",
+        "claimText": "Pricing begins at $25 per vehicle per month for Trakvia's base tier."
+      }
+    ],
+    "ms": 31756
+  },
+  "s03": {
+    "tones": {
+      "fleetora": "recommended",
+      "novahaul": "not_recommended"
+    },
+    "wrongFacts": [],
+    "ms": 40605
+  },
+  "s04": {
+    "tones": {
+      "routelyne": "not_recommended",
+      "corvane": "recommended",
+      "gridwell": "negative"
+    },
+    "wrongFacts": [],
+    "ms": 37018
+  },
+  "s06": {
+    "tones": {
+      "corvane": "recommended"
+    },
+    "wrongFacts": [
+      {
+        "brand": "corvane",
+        "factKey": "hq",
+        "claimText": "The company is headquartered in Denver, Colorado."
+      }
+    ],
+    "ms": 57068
+  },
+  "s07": {
+    "tones": {
+      "novahaul": "negative",
+      "trakvia": "recommended"
+    },
+    "wrongFacts": [],
+    "ms": 58238
+  },
+  "s08": {
+    "tones": {
+      "gridwell": "recommended"
+    },
+    "wrongFacts": [],
+    "ms": 32718
+  },
+  "s09": {
+    "tones": {
+      "corvane": "recommended",
+      "routelyne": "not_recommended"
+    },
+    "wrongFacts": [],
+    "ms": 36231
+  },
+  "s10": {
+    "tones": {
+      "corvane": "recommended",
+      "fleetora": "not_recommended"
+    },
+    "wrongFacts": [],
+    "ms": 53439
+  },
+  "s11": {
+    "tones": {
+      "gridwell": "recommended",
+      "trakvia": "neutral",
+      "novahaul": "not_recommended",
+      "routelyne": "negative"
+    },
+    "wrongFacts": [],
+    "ms": 60913
+  },
+  "s12": {
+    "tones": {
+      "fleetora": "recommended",
+      "corvane": "not_recommended"
+    },
+    "wrongFacts": [],
+    "ms": 28584
+  },
+  "s13": {
+    "tones": {
+      "trakvia": "not_recommended"
+    },
+    "wrongFacts": [
+      {
+        "brand": "trakvia",
+        "factKey": "founded",
+        "claimText": "Trakvia launched in 2012 and has grown steadily in the Texas market."
+      },
+      {
+        "brand": "trakvia",
+        "factKey": "features.fuel_card_integration",
+        "claimText": "It supports fuel card integration with most major card providers."
+      },
+      {
+        "brand": "trakvia",
+        "factKey": "features.eld_compliance",
+        "claimText": "That said, if you run long-haul routes, I'd look elsewhere, since its ELD workflow is built for short-haul."
+      }
+    ],
+    "ms": 31552
+  },
+  "s14": {
+    "tones": {
+      "corvane": "recommended"
+    },
+    "wrongFacts": [
+      {
+        "brand": "corvane",
+        "factKey": "hq",
+        "claimText": "Don't confuse Corvane Fleet with Corvane Logistics, which is a trucking carrier rather than a software company."
+      }
+    ],
+    "ms": 25507
+  },
+  "s15": {
+    "tones": {
+      "gridwell": "not_recommended",
+      "routelyne": "recommended"
+    },
+    "wrongFacts": [
+      {
+        "brand": "gridwell",
+        "factKey": "features.payroll",
+        "claimText": "Gridwell Systems is the most feature-rich platform here, and it even includes payroll processing for drivers."
+      }
+    ],
+    "ms": 74783
+  },
+  "s16": {
+    "tones": {
+      "routelyne": "recommended"
+    },
+    "wrongFacts": [
+      {
+        "brand": "routelyne",
+        "factKey": "hq",
+        "claimText": "Routelyne is based in San Diego, California."
+      },
+      {
+        "brand": "routelyne",
+        "factKey": "features.maintenance_alerts",
+        "claimText": "It also sends maintenance alerts based on odometer readings."
+      }
+    ],
+    "ms": 38300
+  },
+  "s17": {
+    "tones": {
+      "fleetora": "recommended",
+      "gridwell": "recommended",
+      "trakvia": "negative",
+      "novahaul": "not_recommended",
+      "corvane": "neutral"
+    },
+    "wrongFacts": [],
+    "ms": 57978
+  },
+  "s19": {
+    "tones": {
+      "trakvia": "neutral",
+      "fleetora": "neutral"
+    },
+    "wrongFacts": [
+      {
+        "brand": "trakvia",
+        "factKey": "integrations",
+        "claimText": "Trakvia integrates with HubSpot, which helps if your sales team books service jobs."
+      }
+    ],
+    "ms": 27895
+  },
+  "s20": {
+    "tones": {
+      "corvane": "not_recommended",
+      "novahaul": "recommended"
+    },
+    "wrongFacts": [
+      {
+        "brand": "corvane",
+        "factKey": "starting_price_usd",
+        "claimText": "Corvane Fleet pricing begins at $25 per vehicle per month."
+      }
+    ],
+    "ms": 49971
+  },
+  "s21": {
+    "tones": {
+      "fleetora": "recommended",
+      "novahaul": "not_recommended"
+    },
+    "wrongFacts": [],
+    "ms": 32279
+  },
+  "s22": {
+    "tones": {
+      "gridwell": "negative"
+    },
+    "wrongFacts": [
+      {
+        "brand": "gridwell",
+        "factKey": "founded",
+        "claimText": "Gridwell Systems has been around since 2003 and is one of the older names in telematics."
+      },
+      {
+        "brand": "gridwell",
+        "factKey": "hq",
+        "claimText": "The company is based in Milwaukee, Wisconsin."
+      }
+    ],
+    "ms": 58678
+  },
+  "s23": {
+    "tones": {
+      "routelyne": "recommended"
+    },
+    "wrongFacts": [],
+    "ms": 33870
+  },
+  "s24": {
+    "tones": {
+      "routelyne": "recommended",
+      "trakvia": "not_recommended"
+    },
+    "wrongFacts": [
+      {
+        "brand": "routelyne",
+        "factKey": "integrations",
+        "claimText": "Routelyne integrates with QuickBooks for automatic invoice sync."
+      },
+      {
+        "brand": "trakvia",
+        "factKey": "starting_price_usd",
+        "claimText": "Trakvia costs $45 per vehicle per month on its starter plan."
+      }
+    ],
+    "ms": 27487
+  },
+  "s25": {
+    "tones": {
+      "corvane": "recommended",
+      "trakvia": "recommended",
+      "gridwell": "not_recommended",
+      "routelyne": "not_recommended"
+    },
+    "wrongFacts": [
+      {
+        "brand": "corvane",
+        "factKey": "starting_price_usd",
+        "claimText": "Corvane Fleet and Trakvia both start at $49 per vehicle per month."
+      },
+      {
+        "brand": "trakvia",
+        "factKey": "features.payroll",
+        "claimText": "Unlike Gridwell Systems, Routelyne includes payroll for drivers."
+      }
+    ],
+    "ms": 31215
+  },
+  "s26": {
+    "tones": {
+      "novahaul": "not_recommended",
+      "corvane": "neutral"
+    },
+    "wrongFacts": [],
+    "ms": 29854
+  },
+  "s27": {
+    "tones": {
+      "corvane": "recommended",
+      "gridwell": "negative"
+    },
+    "wrongFacts": [
+      {
+        "brand": "corvane",
+        "factKey": "features.maintenance_alerts",
+        "claimText": "Gridwell Systems doesn't offer maintenance alerts, which surprised me given its price."
+      },
+      {
+        "brand": "gridwell",
+        "factKey": "features.maintenance_alerts",
+        "claimText": "Gridwell Systems doesn't offer maintenance alerts, which surprised me given its price."
+      }
+    ],
+    "ms": 31933
+  },
+  "s28": {
+    "tones": {
+      "fleetora": "recommended",
+      "trakvia": "recommended",
+      "routelyne": "recommended"
+    },
+    "wrongFacts": [],
+    "ms": 30505
+  },
+  "s29": {
+    "tones": {
+      "corvane": "not_recommended",
+      "trakvia": "not_recommended"
+    },
+    "wrongFacts": [
+      {
+        "brand": "corvane",
+        "factKey": "features.maintenance_alerts",
+        "claimText": "One gap: Corvane Fleet has no maintenance alerts, so you'd track service intervals separately."
+      },
+      {
+        "brand": "trakvia",
+        "factKey": "features.payroll",
+        "claimText": "Trakvia, by contrast, handles driver payroll natively."
+      }
+    ],
+    "ms": 25602
+  },
+  "s30": {
+    "tones": {
+      "gridwell": "not_recommended",
+      "novahaul": "recommended"
+    },
+    "wrongFacts": [
+      {
+        "brand": "gridwell",
+        "factKey": "starting_price_usd",
+        "claimText": "Gridwell Systems starts at $75 per vehicle per month."
+      }
+    ],
+    "ms": 29086
+  }
+}

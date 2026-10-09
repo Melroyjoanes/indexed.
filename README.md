@@ -32,7 +32,7 @@ Other commands:
 ```bash
 npm run export       # writes out/mentions.csv and out/wrong_facts.csv
 npm run accuracy     # prints the accuracy check below
-npm run check        # lint, type check and the 301 tests
+npm run check        # lint, type check and the 321 tests
 ```
 
 **A new week** is just another file. Drop `week7.jsonl` into `data/` and it's picked up on the next page load, or upload it on the Data page to try it in your browser first. Supported field aliases, AI tool names and date formats are normalised automatically. Structures the loader doesn't recognise are reported on the Data page and left out of scores; supporting a genuinely new export format needs a parser update.
@@ -93,7 +93,7 @@ The commit history follows this order. Changes were delivered through pull reque
 
 **What I chose not to do**
 
-- **No AI model for tone, after testing one.** I tried two small models that run locally for free (DeBERTa and MobileBERT, via transformers.js) as a second opinion for sentences the rules can't judge. They read plain mentions as recommendations ("Trakvia is another option" came back as recommended with 74% confidence), and those are exactly the sentences they'd be asked about, so accuracy would have gone down. A larger local model is the next thing to evaluate, but it would need benchmarking against the same held-out checks before adoption, plus a separate install and fixed settings so results can be reproduced.
+- **No AI model in the scoring, after testing two.** Small local NLI models (DeBERTa, MobileBERT) read plain mentions as recommendations. A local instruction model (Qwen2.5 1.5B) was then trialled on 30 full answers as a second opinion: it fixed a few verdicts the rules missed, but gave 12 verdicts to plain mentions, flagged 5 true statements as wrong facts, and took about 41 seconds per answer. It was rejected for release, and the gaps it exposed were fixed in the rules instead. The full record, with predictions and settings, is in [`docs/evaluation/local-model-trial.md`](docs/evaluation/local-model-trial.md).
 - **No logins or database.** Not needed to use it, and they get in the way of "open it and use it".
 - **No collection from the AI tools.** The brief provides the answers.
 
@@ -132,7 +132,7 @@ There are three different kinds of evidence here, and they say different things.
 
 The rules were written after reading the sample pack, so this is the best case, not an estimate for new data.
 
-**2. A fresh evaluation.** `tests/accuracy/held-out-3.ts` was written before it was ever run against the rules and hasn't been used to tune them.
+**2. A fresh evaluation, first run.** `tests/accuracy/held-out-3.ts` was written before it was ever run against the rules. These are its first-run results:
 
 |                                                    | Result |
 | -------------------------------------------------- | ------ |
@@ -143,7 +143,9 @@ The rules were written after reading the sample pack, so this is the best case, 
 | False contradictions                               | 0      |
 | True or uncovered statements left alone (controls) | 4 / 4  |
 
-These are small samples, so they show the kind of mistakes to expect rather than a precise rate. On this set, missing a verdict was the only tone error, and the one missed fact was a price phrased as "pricing begins at". Earlier held-out sets measured 5 / 12 and 4 / 12 on first run; both have been seen since, so they now only serve as regressions (below).
+These are small samples, so they show the kind of mistakes to expect rather than a precise rate. On this set, missing a verdict was the only tone error, and the one missed fact was a price phrased as "pricing begins at". Earlier held-out sets measured 5 / 12 and 4 / 12 on first run.
+
+All three sets have been seen since, so they now only serve as regressions. Later rule changes, prompted by the local model trial, were informed by their misses, and set 3 now scores 10 / 12 on tone and 4 / 4 on facts. Because those changes saw the misses, that isn't a fresh result. A new sealed 40-answer set is the next fresh measure. It will be run once, after its labels are reviewed by a person, and reported here.
 
 **3. Regression checks.** These say the output hasn't changed, not that it's right:
 
