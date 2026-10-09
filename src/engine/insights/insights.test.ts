@@ -5,7 +5,7 @@ import {
   coverage,
   describeFact,
   factAlerts,
-  howMany,
+  factCounts,
   replacements,
   sources,
   weeklyBrief,
@@ -83,8 +83,46 @@ describe("wrong-fact alerts", () => {
     expect(describeFact("Routelyne", "features.eld_compliance", "true", "false").claim).toBe(
       "Routelyne offers ELD compliance",
     );
-    expect(howMany(1, "X")).toBe("1 answer says X");
-    expect(howMany(3, "X")).toBe("3 answers say X");
+  });
+});
+
+describe("wrong-fact counts", () => {
+  const alerts = (week: number) =>
+    factAlerts(
+      results([
+        ...fullWeek(1, ["chatgpt"], "Corvane Fleet is good. It's based in Chicago."),
+        [2, "chatgpt", "P01", 1, "Corvane Fleet is good. It's based in Chicago."],
+        [2, "chatgpt", "P01", 2, "Corvane Fleet is good. It was founded in 2009."],
+      ]),
+      ["corvane"],
+      week,
+    );
+
+  it("leads with this week's count and labels the running total", () => {
+    const [hq, founded] = alerts(2);
+    expect(factCounts(hq!, 2)).toEqual({
+      lead: "1 answer this week says Corvane is based in Chicago",
+      history: "5 answers in total since week 1",
+    });
+    expect(factCounts(founded!, 2)).toEqual({
+      lead: "1 answer this week says Corvane was founded in 2009",
+      history: "First seen this week",
+    });
+  });
+
+  it("says when a claim wasn't repeated this week", () => {
+    const later = factAlerts(
+      results([
+        ...fullWeek(1, ["chatgpt"], "Corvane Fleet is good. It's based in Chicago."),
+        ...fullWeek(2, ["chatgpt"], "Corvane is a strong pick."),
+      ]),
+      ["corvane"],
+      2,
+    );
+    expect(factCounts(later[0]!, 2)).toEqual({
+      lead: "Corvane is based in Chicago",
+      history: "Not seen this week; 4 answers in week 1",
+    });
   });
 });
 
@@ -156,9 +194,48 @@ describe("weekly brief", () => {
       ],
       2,
     );
-    expect(b.headline).toMatch(/^Corvane is down \d+ points since week 1\./);
+    expect(b.headline).toMatch(/^Corvane is down \d+\.\d points since week 1\./);
     expect(b.gained[0]?.name).toBe("Trakvia");
     expect(b.cards.find((c) => c.brand === "corvane")?.vsLastWeek?.clear).toBe(true);
+  });
+
+  it("explains why it compares with an earlier week", () => {
+    const steady = "Corvane is a strong pick. Trakvia is another option.";
+    const b = brief(
+      [
+        ...fullWeek(1, ["chatgpt"], steady),
+        ...fullWeek(2, ["chatgpt"], steady),
+        ...fullWeek(3, ["chatgpt"], steady),
+        ...fullWeek(4, ["chatgpt"], steady),
+      ],
+      4,
+    );
+    expect(b.earlier).toBe(1);
+    expect(b.baselineNote).toMatch(
+      /^Week 3 to week 4 is within normal variation for Corvane, so this summary compares with week 1 instead./,
+    );
+    const last = brief(
+      [...fullWeek(1, ["chatgpt"], steady), ...fullWeek(2, ["chatgpt"], steady)],
+      2,
+    );
+    expect(last.earlier).toBe(1);
+    expect(last.baselineNote).toBeNull();
+  });
+
+  it("words next steps as things to monitor, not proof", () => {
+    const b = brief(
+      [
+        ...fullWeek(1, ["chatgpt"], "Corvane is a strong pick."),
+        ...fullWeek(2, ["chatgpt"], "Trakvia is a strong pick. Corvane Fleet is based in Chicago."),
+      ],
+      2,
+    );
+    const text = b.actions.map((a) => a.detail).join(" ");
+    expect(text).toMatch(/keep watching|keep tracking/i);
+    expect(text).not.toMatch(/show whether it worked|fade/);
+    expect(b.actions.find((a) => a.kind === "facts")?.detail).toMatch(
+      /^4 answers this week say Corvane is based in Chicago \(it's in Columbus, Ohio; 4 in total\)/,
+    );
   });
 
   it("shows nothing to act on in a week with no usable answers", () => {

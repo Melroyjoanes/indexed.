@@ -1,6 +1,7 @@
 /** Wrong facts grouped into alerts, only ever using weeks up to the one shown. */
 import { orderEngines } from "../config";
 import type { ClaimRow, Results } from "../run";
+import { plural } from "./words";
 
 export interface FactAlert {
   brand: string;
@@ -65,9 +66,30 @@ export function describeFact(
   }
 }
 
-/** "8 answers say Corvane is based in Chicago" / "1 answer says ..." */
-export const howMany = (n: number, claim: string) =>
-  `${n} ${n === 1 ? "answer says" : "answers say"} ${claim}`;
+/**
+ * This week's count leads and the running total is labelled as such, so a
+ * claim that has been around for weeks doesn't read as a new spike.
+ *   lead:    "2 answers this week say Corvane is based in Chicago"
+ *   history: "8 answers in total since week 1"
+ */
+export function factCounts(f: FactAlert, week: number): { lead: string; history: string } {
+  const span =
+    f.firstWeek === f.lastWeek
+      ? `in week ${f.firstWeek}`
+      : `from week ${f.firstWeek} to ${f.lastWeek}`;
+  if (f.thisWeek === 0)
+    return {
+      lead: f.claim.charAt(0).toUpperCase() + f.claim.slice(1),
+      history: `Not seen this week; ${plural(f.answers, "answer")} ${span}`,
+    };
+  return {
+    lead: `${f.thisWeek} ${f.thisWeek === 1 ? "answer this week says" : "answers this week say"} ${f.claim}`,
+    history:
+      f.answers === f.thisWeek && f.firstWeek === week
+        ? "First seen this week"
+        : `${plural(f.answers, "answer")} in total since week ${f.firstWeek}`,
+  };
+}
 
 export function factAlerts(res: Results, brands: string[], through: number): FactAlert[] {
   const weekOf = new Map(res.answers.map((a) => [a.responseId, a]));

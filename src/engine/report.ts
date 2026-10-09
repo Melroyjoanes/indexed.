@@ -9,7 +9,7 @@ import { engineLabel, focusBrands, shortName } from "./config";
 import { mentionsCsv, wrongFactsCsv } from "./export";
 import {
   describeFact,
-  howMany,
+  factCounts,
   listOf,
   plural,
   sources,
@@ -88,11 +88,11 @@ export interface ReportScoreRow {
 }
 
 export interface ReportFact {
-  /** "8 answers say Corvane is based in Chicago. In fact, it's in Columbus, Ohio." */
+  /** "2 answers this week say Corvane is based in Chicago. In fact, it's in Columbus, Ohio." */
   text: string;
   /** "Corvane is based in Chicago. In fact, it's in Columbus, Ohio." */
   claim: string;
-  /** "2 this week, first seen in week 3" */
+  /** "8 answers in total since week 1" */
   detail: string;
   thisWeek: number;
   answers: number;
@@ -109,6 +109,8 @@ export interface ReportContent {
   weeks: number[];
   earlier: number | null;
   headline: string;
+  /** Why the headline compares with an earlier week than the last one, when it does. */
+  baselineNote: string | null;
   completeness: string;
   completenessLevel: "complete" | "minor" | "major" | "none";
   scores: ReportScoreRow[];
@@ -186,21 +188,21 @@ export function reportContent(res: Results, sc: Scoring, week: number): ReportCo
     brief.earlier === null && brief.weeks.length < 2
       ? `Week ${week} is the first week of data, so there are no changes to show yet.`
       : narrowed?.comparedOn
-        ? `Changes vs week ${narrowed.against} compare ${listOf(narrowed.comparedOn)} only, because ${listOf(missingFrom(narrowed.comparedOn))} ${missingFrom(narrowed.comparedOn).length === 1 ? "is" : "are"} missing from one of the two weeks.`
+        ? `Scores use every answer from week ${week}. Changes vs week ${narrowed.against} compare ${listOf(narrowed.comparedOn)} only, because ${listOf(missingFrom(narrowed.comparedOn))} ${missingFrom(narrowed.comparedOn).length === 1 ? "is" : "are"} missing from one of the two weeks, so a change can differ from the gap between two weeks' scores.`
         : "Changes compare the same questions and AI tools in both weeks.";
 
-  const facts: ReportFact[] = brief.facts.map((f) => ({
-    text: `${howMany(f.answers, f.claim)}. In fact, ${f.truth}.`,
-    claim: `${capital(f.claim)}. In fact, ${f.truth}.`,
-    detail:
-      f.thisWeek > 0
-        ? `${f.thisWeek} this week, first seen in week ${f.firstWeek}`
-        : `Not seen this week, last seen in week ${f.lastWeek}`,
-    thisWeek: f.thisWeek,
-    answers: f.answers,
-    firstWeek: f.firstWeek,
-    lastWeek: f.lastWeek,
-  }));
+  const facts: ReportFact[] = brief.facts.map((f) => {
+    const n = factCounts(f, week);
+    return {
+      text: `${n.lead}. In fact, ${f.truth}.`,
+      claim: `${capital(f.claim)}. In fact, ${f.truth}.`,
+      detail: n.history,
+      thisWeek: f.thisWeek,
+      answers: f.answers,
+      firstWeek: f.firstWeek,
+      lastWeek: f.lastWeek,
+    };
+  });
 
   const content: ReportContent = {
     title: `AI visibility report, ${brief.clientName}, week ${week}`,
@@ -210,6 +212,7 @@ export function reportContent(res: Results, sc: Scoring, week: number): ReportCo
     weeks: brief.weeks,
     earlier: brief.earlier,
     headline: brief.headline,
+    baselineNote: brief.baselineNote,
     completeness: brief.coverage.summary,
     completenessLevel: brief.coverage.level,
     scores: none ? [] : scores,
@@ -273,6 +276,7 @@ function summarySheet(r: ReportContent): SheetContent {
   const rows: CellValue[][] = [
     ["Report", r.title],
     ["Headline", r.headline],
+    ...(r.baselineNote ? [["Compared with", r.baselineNote]] : []),
     ["Data completeness", r.completeness],
   ];
   for (const c of r.scores) {
