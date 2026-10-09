@@ -202,7 +202,12 @@ export function WeeklySummary() {
 
           <div className="grid gap-10 lg:grid-cols-5">
             <Section title="What AI is getting wrong" className="lg:col-span-3">
-              {brief.facts.length === 0 ? (
+              {brief.factCheckUnavailable ? (
+                <p className="bg-warn-surface text-warn flex gap-2 rounded-lg px-3 py-2 text-sm">
+                  <WarningIcon weight="fill" className="mt-0.5 size-4 shrink-0" />
+                  {brief.factCheckUnavailable}
+                </p>
+              ) : brief.facts.length === 0 ? (
                 <p className="text-muted-foreground">Nothing contradicts the fact sheet so far.</p>
               ) : (
                 <>

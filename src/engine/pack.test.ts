@@ -44,3 +44,53 @@ describe("data pack", () => {
     expect(() => buildPack(base, CONFIG)).toThrow(/No answer files/);
   });
 });
+
+describe("fact sheet validation", () => {
+  const answers = {
+    name: "r.jsonl",
+    content: JSON.stringify({
+      response_id: "r1",
+      week: 1,
+      engine: "chatgpt",
+      prompt_id: "P01",
+      run: 1,
+      response_text: "Corvane Fleet is good. It's based in Chicago.",
+    }),
+  };
+  const pack = (facts?: string) =>
+    buildPack(
+      [
+        { name: "brands.json", content: JSON.stringify(BRANDS) },
+        ...(facts === undefined ? [] : [{ name: "facts.json", content: facts }]),
+        answers,
+      ],
+      CONFIG,
+    );
+
+  it("refuses a fact sheet with nothing to check, instead of reporting no wrong facts", () => {
+    expect(() => pack("{}")).toThrow(PackError);
+    expect(() => pack("{}")).toThrow(/no checkable facts/);
+    expect(() => pack(JSON.stringify({ _comment: "x", corvane: { name: "Corvane" } }))).toThrow(
+      /no checkable facts/,
+    );
+  });
+
+  it("refuses a fact sheet that isn't an object of companies", () => {
+    expect(() => pack("[]")).toThrow(/should be an object/);
+    expect(() => pack('"facts"')).toThrow(/should be an object/);
+  });
+
+  it("drops fields of the wrong type rather than checking against them", () => {
+    const p = pack(JSON.stringify({ corvane: { hq: "Columbus, Ohio", founded: "2014" } }));
+    expect(p.settings.facts.corvane).toEqual({ hq: "Columbus, Ohio" });
+  });
+
+  it("keeps only the companies it can check when the sheet is partial", () => {
+    const p = pack(JSON.stringify({ corvane: FACTS.corvane, unknownco: FACTS.trakvia }));
+    expect(Object.keys(p.settings.facts)).toEqual(["corvane"]);
+  });
+
+  it("loads without a fact sheet, with nothing marked as checkable", () => {
+    expect(pack().settings.facts).toEqual({});
+  });
+});

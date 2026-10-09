@@ -41,9 +41,17 @@ export interface WeeklyBrief {
   changes: (Driver & { question: string; engineLabel: string })[];
   gained: { brand: string; name: string; pairs: { question: string; engineLabel: string }[] }[];
   facts: FactAlert[];
+  /** Set when the client has no checkable facts, so "no wrong facts" would mislead. */
+  factCheckUnavailable: string | null;
   competitorFacts: FactAlert[];
+  /** Tracked competitors the fact sheet doesn't cover. */
+  uncheckedCompetitors: string[];
   actions: Action[];
 }
+
+/** Shown instead of "no wrong facts" when there's nothing to check against. */
+export const factCheckUnavailable = (name: string) =>
+  `Fact-checking is unavailable for ${name}: the fact sheet has no checkable facts for it, so wrong claims can't be found. This doesn't mean the answers are accurate.`;
 
 const finite = (n: number) => (Number.isFinite(n) ? n : null);
 
@@ -166,6 +174,8 @@ export function weeklyBrief(res: Results, sc: Scoring, week: number): WeeklyBrie
             })),
           })),
     facts: s.facts[s.client] ? factAlerts(res, [s.client], week) : [],
+    factCheckUnavailable: s.facts[s.client] ? null : factCheckUnavailable(client),
+    uncheckedCompetitors: tracked.filter((b) => !s.facts[b]).map((b) => shortName(s, b)),
     competitorFacts: factAlerts(
       res,
       tracked.filter((b) => s.facts[b]),

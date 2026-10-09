@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { loadPackFromDir } from "../../scripts/lib";
 import golden from "../../tests/golden.json";
 import { fullWeek, results, type Row } from "../../tests/fixtures/build";
+import { FACTS } from "../../tests/fixtures/pack";
 import { viewAs } from "./config";
 import { mentionsCsv, wrongFactsCsv } from "./export";
 import { factCounts, weeklyBrief } from "./insights";
@@ -266,5 +267,23 @@ describe("evaluation files", () => {
     const [mentions, wrong] = evaluationFiles(runPack(loadPackFromDir("data")));
     expect(sha(mentions!.content)).toBe(golden.mentionsSha256);
     expect(sha(wrong!.content)).toBe(golden.wrongFactsSha256);
+  });
+});
+
+describe("when facts can't be checked", () => {
+  it("says fact-checking is unavailable instead of reporting a clean sheet", () => {
+    const { res, sc } = build(fullWeek(1, ["chatgpt"], "Corvane Fleet is good. It's in Chicago."));
+    const noFacts = {
+      ...res,
+      pack: { ...res.pack, settings: { ...res.pack.settings, facts: { trakvia: FACTS.trakvia } } },
+    };
+    const r = reportContent(noFacts, sc, 1);
+    expect(r.factCheckUnavailable).toMatch(/^Fact-checking is unavailable for Corvane/);
+    const b = weeklyBrief(noFacts, sc, 1);
+    expect(b.facts).toEqual([]);
+    expect(b.uncheckedCompetitors).toEqual(["Routelyne", "Gridwell"]);
+    const summary = sheet(workbookContent(noFacts, sc, 1), "Summary");
+    expect(summary.rows.flat().join(" ")).toContain("Fact-checking is unavailable for Corvane");
+    expect(summary.rows.flat().join(" ")).not.toContain("Nothing has contradicted");
   });
 });

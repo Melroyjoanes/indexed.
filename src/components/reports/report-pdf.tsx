@@ -237,19 +237,25 @@ export function ReportDocument({ r }: { r: ReportContent }) {
         )}
 
         <Heading>What AI is getting wrong</Heading>
-        <Text style={s.h3}>{`In week ${r.week}'s answers`}</Text>
-        {r.factsThisWeek.length ? (
-          <Bullets items={r.factsThisWeek.map((f) => `${f.text} ${f.detail}.`)} />
+        {r.factCheckUnavailable ? (
+          <Text style={s.warn}>{r.factCheckUnavailable}</Text>
         ) : (
-          <Text style={s.note}>No wrong facts in this week&apos;s answers.</Text>
-        )}
-        <Text style={s.h3} minPresenceAhead={40}>
-          {`Every wrong claim up to week ${r.week}`}
-        </Text>
-        {r.factsHistory.length ? (
-          <FactHistory facts={r.factsHistory} />
-        ) : (
-          <Text style={s.note}>Nothing has contradicted the fact sheet so far.</Text>
+          <>
+            <Text style={s.h3}>{`In week ${r.week}'s answers`}</Text>
+            {r.factsThisWeek.length ? (
+              <Bullets items={r.factsThisWeek.map((f) => `${f.text} ${f.detail}.`)} />
+            ) : (
+              <Text style={s.note}>No wrong facts in this week&apos;s answers.</Text>
+            )}
+            <Text style={s.h3} minPresenceAhead={40}>
+              {`Every wrong claim up to week ${r.week}`}
+            </Text>
+            {r.factsHistory.length ? (
+              <FactHistory facts={r.factsHistory} />
+            ) : (
+              <Text style={s.note}>Nothing has contradicted the fact sheet so far.</Text>
+            )}
+          </>
         )}
 
         {r.nextSteps.length > 0 && (

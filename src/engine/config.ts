@@ -25,6 +25,38 @@ export function brandKey(name: string): string {
   return (name.trim().split(/\s+/)[0] ?? "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
+/**
+ * The checkable part of one company's facts.json entry, or null when nothing
+ * in it can be checked. Fields of the wrong type are dropped rather than
+ * trusted: a founding year written as "2014" or a feature list that isn't
+ * true/false would otherwise produce wrong contradictions.
+ */
+export function usableFacts(v: unknown): BrandFacts | null {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+  const o = v as Record<string, unknown>;
+  const out: BrandFacts = {};
+  if (typeof o.name === "string") out.name = o.name;
+  if (typeof o.website === "string") out.website = o.website;
+  if (typeof o.price_unit === "string") out.price_unit = o.price_unit;
+  if (typeof o.starting_price_usd === "number" && Number.isFinite(o.starting_price_usd))
+    out.starting_price_usd = o.starting_price_usd;
+  if (typeof o.hq === "string" && o.hq.trim()) out.hq = o.hq;
+  if (typeof o.founded === "number" && Number.isInteger(o.founded)) out.founded = o.founded;
+  if (o.features && typeof o.features === "object" && !Array.isArray(o.features)) {
+    const f = Object.entries(o.features).filter(([, x]) => typeof x === "boolean");
+    if (f.length) out.features = Object.fromEntries(f) as Record<string, boolean>;
+  }
+  if (Array.isArray(o.integrations) && o.integrations.every((x) => typeof x === "string"))
+    out.integrations = o.integrations;
+  const checkable =
+    out.starting_price_usd !== undefined ||
+    out.hq !== undefined ||
+    out.founded !== undefined ||
+    out.features !== undefined ||
+    out.integrations !== undefined;
+  return checkable ? out : null;
+}
+
 export function buildSettings(
   brandsFile: BrandsFile,
   config: TrackerConfig,
@@ -52,7 +84,8 @@ export function buildSettings(
 
   const facts: Record<string, BrandFacts> = {};
   for (const [k, v] of Object.entries(factsFile)) {
-    if (!k.startsWith("_") && v && typeof v === "object") facts[k] = v as BrandFacts;
+    const f = k.startsWith("_") ? null : usableFacts(v);
+    if (f && brands[k]) facts[k] = f;
   }
 
   const settings: Settings = {
