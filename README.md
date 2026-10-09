@@ -217,4 +217,4 @@ scripts/             export and accuracy commands
 
 ---
 
-© 2026 Melroy Joanes. Written as a case study for Indexed's AI-Native Developer application; Corvane Fleet and its competitors are fictional. Shared for review only; no licence is granted to copy, modify or distribute this code.
+© 2026 Melroy Joanes. Written as a case study for Indexed's AI-Native Developer application;
