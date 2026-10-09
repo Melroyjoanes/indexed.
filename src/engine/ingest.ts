@@ -29,6 +29,7 @@ export interface LoadReport {
   unreadable: string[]; // "file:line"
   duplicates: string[]; // response ids seen more than once (first copy kept)
   failed: string[]; // calls that errored or came back empty
+  malformed: string[]; // answers whose text isn't plain text (an object, a list, a number...)
   formats: Record<string, number>; // field set -> lines
   formatWeeks: Record<string, number[]>; // field set -> weeks it was seen in
   engineNames: Record<string, number>; // raw engine name -> lines
@@ -54,12 +55,29 @@ export const FIELDS = {
 
 type Row = Record<string, unknown>;
 
-function pick(row: Row, field: keyof typeof FIELDS): unknown {
+/** An error of any shape, as text; false and empty values mean no error. */
+function errorText(v: unknown): string | null {
+  if (v === null || v === false) return null;
+  return typeof v === "string" ? v : JSON.stringify(v);
+}
+
+/** The first value given for a field, of any type. */
+function pickAny(row: Row, field: keyof typeof FIELDS): unknown {
   for (const k of FIELDS[field]) {
     const v = row[k];
     if (v !== undefined && v !== null && v !== "") return v;
   }
   return null;
+}
+
+/**
+ * The first plain value (string or number) for a field. Objects, lists and
+ * true/false aren't ids, weeks or names, so they count as missing instead of
+ * turning into "[object Object]".
+ */
+function pick(row: Row, field: keyof typeof FIELDS): string | number | null {
+  const v = pickAny(row, field);
+  return typeof v === "string" || typeof v === "number" ? v : null;
 }
 
 function toInt(v: unknown): number | null {
@@ -196,6 +214,7 @@ export function loadAnswers(
     unreadable: [],
     duplicates: [],
     failed: [],
+    malformed: [],
     formats: {},
     formatWeeks: {},
     engineNames: {},
@@ -232,9 +251,17 @@ export function loadAnswers(
       }
       seen.add(responseId);
 
-      const raw = String(pick(row, "text") ?? "");
+      // Answer text must be a string. Anything else is set aside as malformed
+      // rather than read as "[object Object]" and scored as an answer that
+      // names nobody.
+      const rawText = pickAny(row, "text");
+      const malformed = rawText !== null && typeof rawText !== "string";
+      if (malformed) report.malformed.push(responseId);
+      const raw = typeof rawText === "string" ? rawText : "";
       const { text, rawIndex } = cleanWithMap(raw);
-      const error = pick(row, "error");
+      const error = malformed
+        ? `The answer text is ${Array.isArray(rawText) ? "a list" : typeof rawText === "object" ? "an object" : `a ${typeof rawText}`}, not text.`
+        : errorText(pickAny(row, "error"));
       const ok = !error && text.trim().length > 0;
       if (!ok) report.failed.push(responseId);
       answers.push({
@@ -249,7 +276,7 @@ export function loadAnswers(
         text,
         raw,
         rawIndex,
-        citations: citations(pick(row, "citations")),
+        citations: citations(pickAny(row, "citations")),
         error: error ? String(error) : null,
         sourceFile: file.name,
         ok,
