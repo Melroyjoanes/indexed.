@@ -27,7 +27,7 @@ export function SiteFooter({ origin }: { origin: "local" | "storage" | "none" })
         <Link href="/data" className="hover:text-foreground">
           Data
         </Link>
-        <span className="ml-auto">Prepared by Indexed for Corvane Fleet</span>
+        <span className="ml-auto">A case study by Melroy Joanes for Indexed</span>
       </div>
     </footer>
   );
