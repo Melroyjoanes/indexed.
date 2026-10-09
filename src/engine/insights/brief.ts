@@ -33,6 +33,8 @@ export interface WeeklyBrief {
   weeks: number[];
   clientName: string;
   earlier: number | null;
+  /** Why the summary compares with an earlier week than the last one, when it does. */
+  baselineNote: string | null;
   coverage: Coverage;
   headline: string;
   cards: ScoreCard[];
@@ -115,7 +117,7 @@ export function weeklyBrief(res: Results, sc: Scoring, week: number): WeeklyBrie
   else {
     const c = compare(sc, s.client, week, earlier, s);
     headline = c.clear
-      ? `${client} is ${c.delta > 0 ? "up" : "down"} ${Math.round(Math.abs(c.delta))} points since week ${earlier}. That's more than the usual run-to-run variation, so it looks like a real shift.`
+      ? `${client} is ${c.delta > 0 ? "up" : "down"} ${Math.abs(c.delta).toFixed(1)} points since week ${earlier}. That's more than the usual run-to-run variation, so it looks like a real shift.`
       : `No clear change for ${client} since week ${earlier}: the difference is within the usual run-to-run variation.`;
   }
   if (cov.level !== "none") {
@@ -126,6 +128,11 @@ export function weeklyBrief(res: Results, sc: Scoring, week: number): WeeklyBrie
         : ` ${shortName(s, leader)} has the highest score this week.`;
   }
 
+  const baselineNote =
+    earlier !== null && prev !== null && earlier !== prev && cov.level !== "none"
+      ? `Week ${prev} to week ${week} is within normal variation for ${client}, so this summary compares with week ${earlier} instead. A slow drift can stay inside the weekly variation every week and still add up to a real change.`
+      : null;
+
   const others = Object.keys(s.brands).filter((b) => b !== s.client);
   const tracked = Object.values(s.brands)
     .filter((b) => b.role === "tracked")
@@ -135,6 +142,7 @@ export function weeklyBrief(res: Results, sc: Scoring, week: number): WeeklyBrie
     weeks,
     clientName: s.brands[s.client]?.name ?? client,
     earlier,
+    baselineNote,
     coverage: cov,
     headline,
     cards,

@@ -32,7 +32,7 @@ Other commands:
 ```bash
 npm run export       # writes out/mentions.csv and out/wrong_facts.csv
 npm run accuracy     # prints the accuracy check below
-npm run check        # lint, type check and the 263 tests
+npm run check        # lint, type check and the 269 tests
 ```
 
 **A new week** is just another file. Drop `week7.jsonl` into `data/` and it's picked up on the next page load, or upload it on the Data page to try it in your browser first. Field names, engine names and date formats that differ between exports are handled, so small format changes don't need code changes.

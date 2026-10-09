@@ -6,7 +6,7 @@ import { CaretRightIcon, InfoIcon, WarningIcon } from "@phosphor-icons/react";
 import { cn } from "cn";
 import { AnswersSheet } from "@/components/answers/answers-sheet";
 import { useDataset } from "@/components/data/dataset-provider";
-import { weeklyBrief, howMany, type FactAlert } from "@/engine/insights";
+import { weeklyBrief, factCounts, type FactAlert } from "@/engine/insights";
 import { brandColors } from "@/lib/brands";
 import { ScoreCards } from "./score-cards";
 
@@ -42,12 +42,11 @@ function FactRow({ f, week }: { f: FactAlert; week: number }) {
             />
             <span className="flex-1">
               <span className="block">
-                {howMany(f.answers, f.claim)}.{" "}
+                {factCounts(f, week).lead}.{" "}
                 <span className="text-muted-foreground">In fact, {f.truth}.</span>
               </span>
               <span className="text-muted-foreground mt-0.5 block text-xs">
-                {f.thisWeek > 0 ? `${f.thisWeek} this week` : `Last seen week ${f.lastWeek}`}
-                {f.firstWeek === week ? ", new this week" : ""}
+                {factCounts(f, week).history}
               </span>
             </span>
             <CaretRightIcon className="text-muted-foreground mt-1 size-4 shrink-0 transition group-hover:translate-x-0.5" />
@@ -88,6 +87,9 @@ export function WeeklySummary() {
         <h1 className="text-2xl leading-snug font-semibold tracking-tight text-balance sm:text-[28px]">
           {brief.headline}
         </h1>
+        {brief.baselineNote ? (
+          <p className="text-muted-foreground text-sm">{brief.baselineNote}</p>
+        ) : null}
         {cov.level === "major" || cov.level === "none" ? (
           <p className="bg-warn-surface text-warn flex gap-2 rounded-lg px-3 py-2 text-sm">
             <WarningIcon weight="fill" className="mt-0.5 size-4 shrink-0" />

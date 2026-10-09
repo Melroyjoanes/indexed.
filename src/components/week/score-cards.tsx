@@ -4,7 +4,7 @@ import { ArrowDownRightIcon, ArrowUpRightIcon, InfoIcon, MinusIcon } from "@phos
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "cn";
 import type { ChangeView, ScoreCard } from "@/engine/insights";
-import { percent, score, signed } from "@/lib/format";
+import { percent, score, score1, signed } from "@/lib/format";
 import { Sparkline } from "./sparkline";
 
 function Change({ c }: { c: ChangeView | null }) {
@@ -69,61 +69,78 @@ export function ScoreCards({
   week: number;
   onSelect: (brand: string) => void;
 }) {
+  const narrowed = cards.find((c) => c.vsLastWeek?.comparedOn)?.vsLastWeek;
   return (
-    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {cards.map((c) => {
-        const narrowed = c.vsLastWeek?.comparedOn;
-        return (
-          <li
-            key={c.brand}
-            className={cn(
-              "bg-card relative flex flex-col gap-3 rounded-xl border p-4 transition-colors",
-              c.isClient
-                ? "border-primary/50 ring-primary/25 ring-2"
-                : "hover:border-primary/30 hover:bg-subtle",
-            )}
-          >
-            {/* the whole card switches the dashboard to this company */}
-            <button
-              type="button"
-              onClick={() => onSelect(c.brand)}
-              aria-pressed={c.isClient}
-              aria-label={c.isClient ? `Showing ${c.name}` : `Show the dashboard for ${c.name}`}
-              className="focus-visible:ring-ring absolute inset-0 rounded-xl outline-none focus-visible:ring-2 active:translate-y-px"
-            />
-            <div className="flex items-baseline justify-between">
-              <h3 className="font-medium">
-                {c.name}
-                {c.isClient ? (
-                  <span className="text-primary ml-2 text-xs font-normal">Selected</span>
-                ) : null}
-              </h3>
-              <span className="text-muted-foreground tabular text-xs">
-                #{c.rank} of {cards.length}
-              </span>
-            </div>
-            <div className="flex items-end justify-between gap-3">
-              <p className="tabular text-4xl font-semibold tracking-tight">{score(c.score)}</p>
-              <div className="flex items-start gap-1">
-                <div className="w-24">
-                  <Sparkline points={c.trend} color={colors[c.brand]!} />
-                </div>
-                <TrendHelp name={c.name} week={week} />
+    <div className="space-y-2">
+      <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {cards.map((c) => {
+          const narrowed = c.vsLastWeek?.comparedOn;
+          return (
+            <li
+              key={c.brand}
+              className={cn(
+                "bg-card relative flex flex-col gap-3 rounded-xl border p-4 transition-colors",
+                c.isClient
+                  ? "border-primary/50 ring-primary/25 ring-2"
+                  : "hover:border-primary/30 hover:bg-subtle",
+              )}
+            >
+              {/* the whole card switches the dashboard to this company */}
+              <button
+                type="button"
+                onClick={() => onSelect(c.brand)}
+                aria-pressed={c.isClient}
+                aria-label={c.isClient ? `Showing ${c.name}` : `Show the dashboard for ${c.name}`}
+                className="focus-visible:ring-ring absolute inset-0 rounded-xl outline-none focus-visible:ring-2 active:translate-y-px"
+              />
+              <div className="flex items-baseline justify-between">
+                <h3 className="font-medium">
+                  {c.name}
+                  {c.isClient ? (
+                    <span className="text-primary ml-2 text-xs font-normal">Selected</span>
+                  ) : null}
+                </h3>
+                <span className="text-muted-foreground tabular text-xs">
+                  #{c.rank} of {cards.length}
+                </span>
               </div>
-            </div>
-            <div className="space-y-1">
-              <Change c={c.vsLastWeek} />
-              {c.vsEarlier ? <Change c={c.vsEarlier} /> : null}
-            </div>
-            <p className="text-muted-foreground mt-auto text-xs">
-              Named in {percent(c.mentionRate)} of answers
-              {narrowed
-                ? `. The change vs week ${c.vsLastWeek?.against} compares ${narrowed.join(" and ")} only (${score(c.vsLastWeek?.before)} to ${score(c.vsLastWeek?.now)}).`
-                : "."}
-            </p>
-          </li>
-        );
-      })}
-    </ul>
+              <div className="flex items-end justify-between gap-3">
+                <p className="flex flex-col">
+                  <span className="tabular text-4xl font-semibold tracking-tight">
+                    {score(c.score)}
+                  </span>
+                  <span className="text-muted-foreground text-xs whitespace-nowrap">
+                    Week {week} score
+                  </span>
+                </p>
+                <div className="flex items-start gap-1">
+                  <div className="w-24">
+                    <Sparkline points={c.trend} color={colors[c.brand]!} />
+                  </div>
+                  <TrendHelp name={c.name} week={week} />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Change c={c.vsLastWeek} />
+                {c.vsEarlier ? <Change c={c.vsEarlier} /> : null}
+              </div>
+              <p className="text-muted-foreground mt-auto text-xs">
+                Named in {percent(c.mentionRate)} of answers.
+                {narrowed
+                  ? ` Like for like with week ${c.vsLastWeek?.against}: ${score1(c.vsLastWeek?.before)} then, ${score1(c.vsLastWeek?.now)} now.`
+                  : null}
+              </p>
+            </li>
+          );
+        })}
+      </ul>
+      {narrowed?.comparedOn ? (
+        <p className="text-muted-foreground text-sm">
+          Each big number uses every answer from week {week}. Changes vs week {narrowed.against}{" "}
+          compare {narrowed.comparedOn.join(" and ")} only, the AI tools both weeks have, so a
+          change can differ from the gap between the two weeks&apos; scores.
+        </p>
+      ) : null}
+    </div>
   );
 }

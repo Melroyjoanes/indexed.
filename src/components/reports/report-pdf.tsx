@@ -153,14 +153,16 @@ function FactHistory({ facts }: { facts: ReportFact[] }) {
   return (
     <View style={s.table}>
       <View style={s.tr}>
-        <Text style={[s.th, { width: "64%" }]}>What AI said, and what is true</Text>
-        <Text style={[s.th, { width: "12%" }]}>Answers</Text>
+        <Text style={[s.th, { width: "52%" }]}>What AI said, and what is true</Text>
+        <Text style={[s.th, { width: "12%" }]}>This week</Text>
+        <Text style={[s.th, { width: "12%" }]}>In total</Text>
         <Text style={[s.th, { width: "12%" }]}>First seen</Text>
         <Text style={[s.th, { width: "12%" }]}>Last seen</Text>
       </View>
       {facts.map((f) => (
         <View key={f.text} style={s.tr} wrap={false}>
-          <Text style={[s.p, { width: "64%", paddingRight: 8 }]}>{f.claim}</Text>
+          <Text style={[s.p, { width: "52%", paddingRight: 8 }]}>{f.claim}</Text>
+          <Text style={{ width: "12%" }}>{f.thisWeek}</Text>
           <Text style={{ width: "12%" }}>{f.answers}</Text>
           <Text style={{ width: "12%" }}>Week {f.firstWeek}</Text>
           <Text style={{ width: "12%" }}>Week {f.lastWeek}</Text>
@@ -195,6 +197,9 @@ export function ReportDocument({ r }: { r: ReportContent }) {
         <Text style={s.brand}>indexed.</Text>
         <Text style={s.title}>{r.title}</Text>
         <Text style={s.headline}>{r.headline}</Text>
+        {r.baselineNote ? (
+          <Text style={[s.note, { marginBottom: 6 }]}>{r.baselineNote}</Text>
+        ) : null}
         <Text style={warn ? s.warn : s.note}>
           <Text style={s.bold}>Data completeness: </Text>
           {r.completeness}

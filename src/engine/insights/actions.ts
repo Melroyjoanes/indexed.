@@ -1,13 +1,13 @@
 /**
- * Suggested next steps. Each says what we saw, what to try and how we'd know
- * it worked. The data shows patterns, not causes, so they're worded as
- * suggestions.
+ * Suggested next steps. Each says what we saw, what to try and what to keep
+ * watching. The data shows patterns, not causes: a later change in the answers
+ * is evidence to look at, not proof that a step worked.
  */
 import { engineLabel, shortName } from "../config";
 import type { Results } from "../run";
 import type { Scoring } from "../score";
 import { gainedWhereWeDropped, drivers } from "./changes";
-import { factAlerts, howMany } from "./facts";
+import { factAlerts, factCounts } from "./facts";
 import { sources } from "./sources";
 import { listOf, plural } from "./words";
 
@@ -51,14 +51,18 @@ export function actions(res: Results, sc: Scoring, week: number, earlier: number
   const question = (id: string) => res.pack.prompts[id]?.question ?? id;
   const out: Action[] = [];
 
-  const facts = factAlerts(res, [c], week).slice(0, 3);
+  const facts = factAlerts(res, [c], week)
+    .filter((f) => f.thisWeek > 0)
+    .slice(0, 3);
   if (facts.length) {
     out.push({
       kind: "facts",
       title: `Correct what AI gets wrong about ${name}`,
       detail:
-        facts.map((f) => `${howMany(f.answers, f.claim)} (${f.truth})`).join("; ") +
-        ". Check the pages those answers cite, make sure the website, pricing page and review-site listings say it clearly, then watch whether the claims fade over the next few weeks.",
+        facts
+          .map((f) => `${factCounts(f, week).lead} (${f.truth}; ${f.answers} in total)`)
+          .join("; ") +
+        ". Check the pages those answers cite and make sure the website, pricing page and review-site listings say it clearly. Then keep tracking how often the claims appear. Answers vary week to week, so fewer of them is a sign to look at, not proof the correction worked.",
     });
   }
 
@@ -84,7 +88,7 @@ export function actions(res: Results, sc: Scoring, week: number, earlier: number
         detail:
           `${name} went from ${d.before} to ${d.now} since week ${earlier}` +
           (who ? `, and ${shortName(s, who.brand)} gained there` : "") +
-          ". A page that answers this exact question is the most direct thing to try; this question will show whether it worked.",
+          ". A page that answers this exact question is the most direct thing to try. Keep watching this question afterwards: a change here is worth noting, but on its own it doesn't show the page caused it.",
       });
     }
   }
@@ -115,12 +119,14 @@ export function actions(res: Results, sc: Scoring, week: number, earlier: number
   const tracked = Object.values(s.brands)
     .filter((b) => b.role === "tracked")
     .map((b) => b.key);
-  const comp = factAlerts(res, tracked, week).sort((a, b) => b.answers - a.answers)[0];
+  // factAlerts already sorts by this week's count, then the total
+  const comp = factAlerts(res, tracked, week)[0];
   if (comp) {
+    const n = factCounts(comp, week);
     out.push({
       kind: "sales",
       title: `For sales: AI is wrong about ${shortName(s, comp.brand)} too`,
-      detail: `${howMany(comp.answers, comp.claim)}, but ${comp.truth}. Prospects may have read this.`,
+      detail: `${n.lead}, but ${comp.truth} (${n.history.charAt(0).toLowerCase()}${n.history.slice(1)}). Prospects may have read this.`,
     });
   }
   return out;

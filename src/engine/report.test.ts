@@ -6,6 +6,7 @@ import golden from "../../tests/golden.json";
 import { fullWeek, results, type Row } from "../../tests/fixtures/build";
 import { viewAs } from "./config";
 import { mentionsCsv, wrongFactsCsv } from "./export";
+import { factCounts, weeklyBrief } from "./insights";
 import {
   evaluationFiles,
   plainDashes,
@@ -105,13 +106,49 @@ describe("report content", () => {
     ]);
     const r = reportContent(res, sc, 2);
     expect(r.factsThisWeek.map((f) => f.text)).toEqual([
-      "4 answers say Corvane was founded in 2009. In fact, it was founded in 2014.",
+      "4 answers this week say Corvane was founded in 2009. In fact, it was founded in 2014.",
     ]);
     expect(r.factsHistory).toHaveLength(2);
     expect(r.factsHistory[1]?.claim).toBe(
       "Corvane is based in Columbus, Georgia. In fact, it's in Columbus, Ohio.",
     );
-    expect(r.factsHistory[1]?.detail).toBe("Not seen this week, last seen in week 1");
+    expect(r.factsHistory[1]?.detail).toBe("Not seen this week; 4 answers in week 1");
+  });
+
+  it("says the same as the weekly summary for the same company, week and data", () => {
+    const rows: Row[] = [
+      ...fullWeek(1, ["chatgpt", "perplexity"], "Corvane is a strong pick."),
+      ...fullWeek(2, ["chatgpt"], "Trakvia is a strong pick. Corvane Fleet is based in Chicago."),
+    ];
+    for (const as of ["corvane", "trakvia"]) {
+      const base = results(rows);
+      const res = { ...base, pack: { ...base.pack, settings: viewAs(base.pack.settings, as) } };
+      const sc = score(res);
+      const r = reportContent(res, sc, 2);
+      const b = weeklyBrief(res, sc, 2);
+      expect(r.headline).toBe(b.headline);
+      expect(r.baselineNote).toBe(b.baselineNote);
+      expect(r.scores.map((x) => [x.brand, x.score, x.vsLastWeek?.delta])).toEqual(
+        [...b.cards]
+          .sort((x, y) => Number(y.isClient) - Number(x.isClient))
+          .map((c) => [c.brand, c.score, c.vsLastWeek?.delta]),
+      );
+      expect(r.factsHistory.map((f) => f.text)).toEqual(
+        b.facts.map((f) => `${factCounts(f, 2).lead}. In fact, ${f.truth}.`),
+      );
+      expect(r.nextSteps).toEqual(b.actions.map((a) => ({ title: a.title, detail: a.detail })));
+    }
+  });
+
+  it("separates this week's scores from the narrower comparison", () => {
+    const res = results([
+      ...fullWeek(1, ["chatgpt"], "Corvane is a strong pick."),
+      ...fullWeek(2, ["chatgpt", "perplexity"], "Corvane is a strong pick."),
+    ]);
+    const r = reportContent(res, score(res), 2);
+    expect(r.scoreNote).toMatch(
+      /^Scores use every answer from week 2. Changes vs week 1 compare ChatGPT only/,
+    );
   });
 
   it("contains no em or en dashes, even when an AI answer does", () => {
