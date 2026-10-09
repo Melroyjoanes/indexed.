@@ -188,3 +188,21 @@ describe("founding years and subscription prices", () => {
     expect([...wrong(text)].sort()).toEqual(expected);
   });
 });
+
+describe("price and feature wording", () => {
+  it("reads 'pricing begins at' as a starting price", () => {
+    expect(wrong("Corvane Fleet pricing begins at $25 per vehicle per month.")).toEqual(
+      new Set(["corvane:starting_price_usd"]),
+    );
+    expect(wrong("Corvane Fleet pricing begins at $29 per vehicle per month.")).toEqual(new Set());
+  });
+
+  it("reads 'sends' as offering a feature", () => {
+    expect(wrong("Routelyne also sends maintenance alerts based on mileage.")).toEqual(
+      new Set(["routelyne:features.maintenance_alerts"]),
+    );
+    expect(wrong("Corvane Fleet also sends maintenance alerts based on mileage.")).toEqual(
+      new Set(),
+    );
+  });
+});
