@@ -18,6 +18,7 @@ export interface PackTotals {
   failed: number; // kept, but the request errored or came back empty
   scored: number;
   unplaced: number; // kept, but missing a week, AI tool or question id
+  malformed: number; // counted as failed: the answer text wasn't text
 }
 
 export function packTotals(res: Results): PackTotals {
@@ -31,6 +32,7 @@ export function packTotals(res: Results): PackTotals {
     failed: r.failed.length,
     scored: res.answers.filter((a) => a.ok && a.placed).length,
     unplaced: res.answers.filter((a) => !a.placed).length,
+    malformed: r.malformed.length,
   };
 }
 

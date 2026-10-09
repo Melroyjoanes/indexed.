@@ -55,7 +55,11 @@ export function DataHealth() {
         <Stat
           value={totals.failed}
           label="Failed requests"
-          note="An error or an empty answer; left out of scores"
+          note={
+            totals.malformed
+              ? `An error or an empty answer; left out of scores. ${totals.malformed} had answer text that wasn't text (an object or a list, for example)`
+              : "An error or an empty answer; left out of scores"
+          }
         />
         <Stat
           value={totals.unreadable.length}

@@ -198,3 +198,66 @@ describe("keeping the raw answer next to the cleaned one", () => {
     expect(cleanText("&copy; [beta] [12]")).toBe("&copy; [beta]");
   });
 });
+
+describe("answer value types", () => {
+  const load = (text: unknown, extra: object = {}) =>
+    loadAnswers(
+      [
+        {
+          name: "w.jsonl",
+          content: JSON.stringify({
+            response_id: "a1",
+            week: 7,
+            engine: "chatgpt",
+            prompt_id: "P01",
+            run: 1,
+            response_text: text,
+            ...extra,
+          }),
+        },
+      ],
+      settings,
+    );
+
+  it.each([
+    [
+      "an object",
+      { answer: "Corvane Fleet is a strong pick." },
+      "The answer text is an object, not text.",
+    ],
+    ["a list", ["Corvane Fleet is a strong pick."], "The answer text is a list, not text."],
+    ["a number", 42, "The answer text is a number, not text."],
+    ["true/false", true, "The answer text is a boolean, not text."],
+  ])("sets aside answer text that is %s instead of scoring it", (_, text, error) => {
+    const { answers, report } = load(text);
+    expect(answers[0]).toMatchObject({ ok: false, text: "", error });
+    expect(report.malformed).toEqual(["a1"]);
+    expect(report.failed).toEqual(["a1"]);
+  });
+
+  it("treats a blank answer as a failed request, not a malformed one", () => {
+    const { answers, report } = load("   ");
+    expect(answers[0]?.ok).toBe(false);
+    expect(report.malformed).toEqual([]);
+    expect(report.failed).toEqual(["a1"]);
+  });
+
+  it("reads a normal string answer", () => {
+    const { answers, report } = load("Corvane Fleet is a strong pick.");
+    expect(answers[0]).toMatchObject({ ok: true, text: "Corvane Fleet is a strong pick." });
+    expect(report.malformed).toEqual([]);
+  });
+
+  it("doesn't turn an object into an engine or question name", () => {
+    const { answers } = load("Corvane is fine.", {
+      engine: { name: "chatgpt" },
+      prompt_id: ["P01"],
+    });
+    expect(answers[0]).toMatchObject({ engine: "unknown", promptId: "" });
+  });
+
+  it("keeps an error given as an object as an error", () => {
+    const { answers } = load("", { error: { message: "timeout" } });
+    expect(answers[0]).toMatchObject({ ok: false, error: '{"message":"timeout"}' });
+  });
+});
