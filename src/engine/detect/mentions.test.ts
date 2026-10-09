@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { settings } from "../../../tests/fixtures/pack";
+import { analyse } from ".";
 import { findMentions, positions } from "./mentions";
 
 const found = (text: string) => Object.fromEntries(positions(findMentions(text, settings).hits));
@@ -64,5 +65,20 @@ describe("finding companies", () => {
       surface: "corvanefleet.com",
       how: "website",
     });
+  });
+});
+
+describe("a sources list written into the answer", () => {
+  it("doesn't count the sites listed under it as mentions", () => {
+    const r = analyse(
+      "Fleetora is the easiest to roll out.\n\nSources: fleetora.com, trakvia.com, routelyne.com",
+      settings,
+    );
+    expect([...r.positions.keys()]).toEqual(["fleetora"]);
+  });
+
+  it("still counts companies named in the answer itself", () => {
+    const r = analyse("Trakvia and Fleetora both work.\n\nSources: trakvia.com", settings);
+    expect([...r.positions.keys()]).toEqual(["trakvia", "fleetora"]);
   });
 });
