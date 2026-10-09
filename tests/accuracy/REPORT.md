@@ -1,6 +1,6 @@
 # Accuracy report
 
-Commit 2258407.
+Commit 81e2be7.
 Data pack fingerprint (SHA-256 of the files in data/): cb3664ac722a17c8.
 
 ## Agreement with the committed labels (sample pack)
@@ -12,17 +12,14 @@ Labels: drafted by Claude Code (the AI assistant used to build this project) fro
 - Position: 39 / 39
 - Tone: 39 / 39
 
-## Fresh evaluation (held-out set 3, run once, never tuned on)
+## Held-out set 3 (first run: tone 8 / 12, facts 3 / 4; seen since, so no longer fresh)
 
-Tone: 8 / 12 right
-  misses: 4 fell back to mentioned, 0 gave a verdict to a neutral sentence, 0 right direction but wrong strength, 0 flipped
-  - "Corvane Fleet would be my first call for a small trucking firm." corvane: expected recommended, got neutral
+Tone: 10 / 12 right
+  misses: 2 fell back to mentioned, 0 gave a verdict to a neutral sentence, 0 right direction but wrong strength, 0 flipped
   - "Corvane Fleet earns my top recommendation for value." corvane: expected recommended, got neutral
-  - "Routelyne's mobile app crashes often, according to users." routelyne: expected negative, got neutral
   - "Stay away from Routelyne if uptime matters to you." routelyne: expected not_recommended, got neutral
-Wrong facts: 3 / 4 contradictions found
-  1 missed, 0 false contradictions, 4 / 4 negative controls clean
-  - missed corvane:starting_price_usd in "Corvane Fleet pricing begins at $25 per vehicle per month."
+Wrong facts: 4 / 4 contradictions found
+  0 missed, 0 false contradictions, 4 / 4 negative controls clean
 
 ## Development regressions (seen while building; not an accuracy estimate)
 
@@ -37,8 +34,7 @@ Tone, set 1 (first reported at 5 / 12): 6 / 12 right
   - "Routelyne is a sensible budget option." routelyne: expected recommended, got neutral
   - "Some drivers dislike Trakvia's in-cab cameras." trakvia: expected negative, got neutral
   - "Gridwell is overpriced for what small fleets need, so it's hard to justify." gridwell: expected not_recommended, got negative
-Tone, set 2 (first reported at 4 / 12): 9 / 12 right
-  misses: 2 fell back to mentioned, 1 gave a verdict to a neutral sentence, 0 right direction but wrong strength, 0 flipped
+Tone, set 2 (first reported at 4 / 12): 10 / 12 right
+  misses: 2 fell back to mentioned, 0 gave a verdict to a neutral sentence, 0 right direction but wrong strength, 0 flipped
   - "Routelyne is fine for budgets, but Gridwell is the better buy for large fleets." gridwell: expected recommended, got neutral
-  - "Gridwell users rarely report problems." gridwell: expected neutral, got negative
   - "Skip Routelyne if you need ELD compliance." routelyne: expected not_recommended, got neutral
