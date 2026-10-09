@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/table";
 import { useDataset } from "@/components/data/dataset-provider";
 import { describeFormats, engineNames, packTotals, weekHealth } from "@/engine/health";
-import { listOf } from "@/engine/insights";
+import { listOf, plural } from "@/engine/insights";
 
 function Stat({ value, label, note }: { value: number; label: string; note: string }) {
   return (
@@ -41,7 +41,11 @@ export function DataHealth() {
         <Stat
           value={totals.kept}
           label="Answers kept"
-          note={`${totals.scored} of them are scored`}
+          note={
+            totals.unplaced
+              ? `${totals.scored} of them are scored. ${plural(totals.unplaced, "answer")} ${totals.unplaced === 1 ? "has" : "have"} no week, AI tool or question id, so ${totals.unplaced === 1 ? "it's" : "they're"} only in the export files`
+              : `${totals.scored} of them are scored`
+          }
         />
         <Stat
           value={totals.duplicates}

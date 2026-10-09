@@ -40,7 +40,7 @@ describe("coverage", () => {
     ]);
     const c = coverage(res, 2);
     expect(c.level).toBe("none");
-    expect(c.summary).toContain("every ChatGPT request failed");
+    expect(c.summary).toContain("Every request to ChatGPT failed");
     expect(c.summary).not.toContain("wasn't collected");
   });
 
@@ -175,6 +175,18 @@ describe("sources", () => {
     res.answers[0]!.citations = ["https://www.g2.com/fleet"];
     const [g2] = sources(res, 1);
     expect(g2).toMatchObject({ domain: "g2.com", neverClient: true, competitorAhead: "trakvia" });
+  });
+});
+
+describe("coverage wording", () => {
+  it("agrees in number when several AI tools are missing", () => {
+    const res = results([
+      ...fullWeek(1, ["chatgpt", "perplexity", "google_ai_overview"], "Corvane is a strong pick."),
+      ...fullWeek(2, ["chatgpt"], "Corvane is a strong pick."),
+    ]);
+    expect(coverage(res, 2).summary).toContain(
+      "Perplexity and Google AI Overviews weren't collected this week",
+    );
   });
 });
 
