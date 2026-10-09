@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useKeepSelection } from "@/components/shell/use-keep-selection";
 import { useMemo, useState } from "react";
 import { CaretRightIcon, InfoIcon, WarningIcon } from "@phosphor-icons/react";
 import { cn } from "cn";
@@ -58,6 +59,7 @@ function FactRow({ f, week }: { f: FactAlert; week: number }) {
 }
 
 export function WeeklySummary() {
+  const keep = useKeepSelection();
   const { results, scoring, week, setClient } = useDataset();
   const brief = useMemo(() => weeklyBrief(results, scoring, week), [results, scoring, week]);
   const colors = useMemo(() => brandColors(results.pack.settings), [results]);
@@ -110,7 +112,10 @@ export function WeeklySummary() {
                 The score (0 to 100) is how strongly AI answers point buyers toward each company.
                 Click a card to see everything from that company&apos;s side. A change is clear when
                 it&apos;s bigger than the usual difference between two runs of the same question.{" "}
-                <Link href="/how-it-works" className="text-foreground underline underline-offset-4">
+                <Link
+                  href={keep("/how-it-works")}
+                  className="text-foreground underline underline-offset-4"
+                >
                   How it works
                 </Link>
               </span>

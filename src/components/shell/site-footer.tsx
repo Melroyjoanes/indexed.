@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useKeepSelection } from "@/components/shell/use-keep-selection";
 import { useMaybeDataset } from "@/components/data/dataset-provider";
 
 export function SiteFooter({ origin }: { origin: "local" | "storage" | "none" }) {
+  const keep = useKeepSelection();
   const data = useMaybeDataset();
   const answers = data?.results.answers.length ?? 0;
   const where =
@@ -21,10 +23,10 @@ export function SiteFooter({ origin }: { origin: "local" | "storage" | "none" })
             {where}
           </span>
         ) : null}
-        <Link href="/how-it-works" className="hover:text-foreground">
+        <Link href={keep("/how-it-works")} className="hover:text-foreground">
           How it works
         </Link>
-        <Link href="/data" className="hover:text-foreground">
+        <Link href={keep("/data")} className="hover:text-foreground">
           Data
         </Link>
         <span className="ml-auto">A case study by Melroy Joanes for Indexed</span>
