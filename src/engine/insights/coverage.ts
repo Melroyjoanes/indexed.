@@ -50,8 +50,11 @@ export function coverage(res: Results, week: number): Coverage {
   const present = rows.filter((r) => r.received > 0).map((r) => r.label);
 
   const parts = [`${received} of ${expected} expected answers came in`];
-  if (absent.length) parts.push(`${listOf(absent)} wasn't collected this week`);
-  if (allFailed.length) parts.push(`every ${listOf(allFailed)} request failed`);
+  if (absent.length)
+    parts.push(
+      `${listOf(absent)} ${absent.length === 1 ? "wasn't" : "weren't"} collected this week`,
+    );
+  if (allFailed.length) parts.push(`Every request to ${listOf(allFailed)} failed`);
   if (failedCalls && !allFailed.length)
     parts.push(
       `${plural(failedCalls, "request")} failed and ${failedCalls === 1 ? "is" : "are"} left out`,
