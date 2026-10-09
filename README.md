@@ -114,6 +114,7 @@ The commit history follows this order. Changes were delivered through pull reque
 - A company named without a verdict is "mentioned" (neutral).
 - In a table, the last column is the verdict ("Top pick" is recommended, "Skip at your size" is advised against).
 - `claim_text` is the whole sentence copied exactly from the raw answer, including any `[1]` footnotes or `&amp;` entities, without the list marker or bold label in front of it. Detection reads a cleaned copy; the export maps the match back to the original text.
+- A clearly identified "Sources:" list within an answer is treated as citation material and excluded from company-mention detection. The surrounding answer remains eligible for analysis.
 - No site in this data is cited only next to competitors, so Sources also flags sites where a competitor is named more often than Corvane.
 
 ---
@@ -147,6 +148,8 @@ These are small samples, so they show the kind of mistakes to expect rather than
 
 All three sets have been seen since, so they now only serve as regressions. Later rule changes, prompted by the local model trial, were informed by their misses, and set 3 now scores 10 / 12 on tone and 4 / 4 on facts. Because those changes saw the misses, that isn't a fresh result. A new sealed 40-answer set is the next fresh measure. It will be run once, after its labels are reviewed by a person, and reported here.
 
+On the development screening set (30 synthetic answers, labels not yet reviewed by a person), tone classifications improved from 39 / 57 to 53 / 57, and detected factual contradictions increased from 17 / 21 to 20 / 21, with no correct statements flagged as wrong before or after. These examples informed development, so these figures are not an independent estimate of accuracy on unseen data.
+
 **3. Regression checks.** These say the output hasn't changed, not that it's right:
 
 - A fingerprint (SHA-256) of both scoring files from the sample pack fails the tests if a single row changes (`tests/golden.test.ts`).
@@ -160,6 +163,8 @@ All three sets have been seen since, so they now only serve as regressions. Late
 ## How I used AI tools
 
 I built this with Claude Code. I set the product requirements, made the decisions on scope, stack, scoring and what to leave out, and reviewed the results. Claude wrote the code, the tests and first drafts of the docs; the stretch screens were built by Claude sub-agents on separate branches and merged one at a time. An independent AI review (OpenAI Codex) audited the code and live flows, and its findings were filed as issues and fixed through the same pull-request process.
+
+I also evaluated a small local language model against the rules-based baseline. It identified language patterns the rules missed, but also introduced incorrect verdicts and factual false positives, with substantial processing time. I used the findings to improve the rules and did not include the model in the released application ([trial record](docs/evaluation/local-model-trial.md)).
 
 Things that went wrong and were caught:
 
