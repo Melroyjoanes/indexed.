@@ -135,7 +135,12 @@ export function CompetitorsView() {
         title="What AI gets wrong about competitors"
         intro={`Claims in answers up to week ${week} that contradict the competitors' own fact sheets. Useful for sales conversations, when a buyer repeats one of them.`}
       >
-        <CompetitorFacts facts={facts} week={week} colors={colors} />
+        <CompetitorFacts
+          facts={facts}
+          week={week}
+          colors={colors}
+          unchecked={focus.filter((b) => b !== s.client && !s.facts[b]).map(name)}
+        />
       </Section>
 
       <Section

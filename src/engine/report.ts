@@ -124,6 +124,8 @@ export interface ReportContent {
   gainedEmpty: string;
   factsThisWeek: ReportFact[];
   factsHistory: ReportFact[];
+  /** Replaces the fact sections when the client's facts can't be checked. */
+  factCheckUnavailable: string | null;
   nextSteps: { title: string; detail: string }[];
   howToRead: string[];
 }
@@ -241,6 +243,7 @@ export function reportContent(res: Results, sc: Scoring, week: number): ReportCo
         : "No company gained in particular where the score dropped.",
     factsThisWeek: facts.filter((f) => f.thisWeek > 0),
     factsHistory: facts,
+    factCheckUnavailable: brief.factCheckUnavailable,
     nextSteps: brief.actions.map((a) => ({ title: a.title, detail: a.detail })),
     howToRead: howToRead(s),
   };
@@ -294,15 +297,19 @@ function summarySheet(r: ReportContent): SheetContent {
   else rows.push(["Biggest changes", r.changesEmpty]);
   if (r.gained.length) for (const g of r.gained) rows.push(["Who gained", g]);
   else rows.push(["Who gained", r.gainedEmpty]);
-  if (r.factsThisWeek.length)
-    for (const f of r.factsThisWeek) rows.push(["Wrong fact this week", `${f.text} ${f.detail}.`]);
-  else rows.push(["Wrong facts this week", "None in this week's answers."]);
-  rows.push([
-    "Wrong facts up to this week",
-    r.factsHistory.length
-      ? `${plural(r.factsHistory.length, "different wrong claim")} since week ${r.weeks[0]}. Every one is listed on the Wrong facts sheet.`
-      : "Nothing has contradicted the fact sheet so far.",
-  ]);
+  if (r.factCheckUnavailable) rows.push(["Wrong facts", r.factCheckUnavailable]);
+  else {
+    if (r.factsThisWeek.length)
+      for (const f of r.factsThisWeek)
+        rows.push(["Wrong fact this week", `${f.text} ${f.detail}.`]);
+    else rows.push(["Wrong facts this week", "None in this week's answers."]);
+    rows.push([
+      "Wrong facts up to this week",
+      r.factsHistory.length
+        ? `${plural(r.factsHistory.length, "different wrong claim")} since week ${r.weeks[0]}. Every one is listed on the Wrong facts sheet.`
+        : "Nothing has contradicted the fact sheet so far.",
+    ]);
+  }
   for (const a of r.nextSteps) rows.push(["Suggested next step", `${a.title}. ${a.detail}`]);
   return {
     name: "Summary",

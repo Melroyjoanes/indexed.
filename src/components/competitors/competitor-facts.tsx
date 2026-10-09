@@ -14,51 +14,70 @@ export function CompetitorFacts({
   facts,
   week,
   colors,
+  unchecked,
 }: {
   facts: FactAlert[];
   week: number;
   colors: Record<string, string>;
+  /** Competitors with no checkable facts. */
+  unchecked: string[];
 }) {
   const { results } = useDataset();
   const s = results.pack.settings;
+  const note = unchecked.length ? (
+    <p className="bg-warn-surface text-warn flex gap-2 rounded-lg px-3 py-2 text-sm">
+      <WarningIcon weight="fill" className="mt-0.5 size-4 shrink-0" />
+      Fact-checking is unavailable for {listOf(unchecked)}: the fact sheet has no checkable facts
+      for {unchecked.length === 1 ? "it" : "them"}, so wrong claims about{" "}
+      {unchecked.length === 1 ? "it" : "them"} can&apos;t be found.
+    </p>
+  ) : null;
   if (!facts.length)
     return (
-      <p className="text-muted-foreground">
-        No answers up to week {week} contradict the competitors&apos; fact sheets.
-      </p>
+      <div className="space-y-3">
+        {note}
+        {Object.values(s.brands).some((b) => b.role === "tracked" && s.facts[b.key]) ? (
+          <p className="text-muted-foreground">
+            No answers up to week {week} contradict the competitors&apos; fact sheets.
+          </p>
+        ) : null}
+      </div>
     );
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-      {facts.map((f) => (
-        <li key={f.brand + f.factKey + f.claimed}>
-          <AnswersSheet
-            title={`${cap(f.claim)}?`}
-            description={`The fact sheet says ${f.truth}. Answers up to week ${week}:`}
-            responseIds={f.responseIds}
-            trigger={
-              <span className="bg-card hover:bg-muted/60 flex h-full flex-col gap-3 rounded-xl border p-4 transition-colors">
-                <span className="flex items-start gap-2.5">
-                  <WarningIcon
-                    weight="fill"
-                    className="text-tone-not-recommended mt-1 size-4 shrink-0"
-                  />
-                  <span className="leading-snug">
-                    <span className="block font-medium">{factCounts(f, week).lead}.</span>
-                    <span className="block">{cap(f.truth)}.</span>
+    <div className="space-y-3">
+      {note}
+      <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {facts.map((f) => (
+          <li key={f.brand + f.factKey + f.claimed}>
+            <AnswersSheet
+              title={`${cap(f.claim)}?`}
+              description={`The fact sheet says ${f.truth}. Answers up to week ${week}:`}
+              responseIds={f.responseIds}
+              trigger={
+                <span className="bg-card hover:bg-muted/60 flex h-full flex-col gap-3 rounded-xl border p-4 transition-colors">
+                  <span className="flex items-start gap-2.5">
+                    <WarningIcon
+                      weight="fill"
+                      className="text-tone-not-recommended mt-1 size-4 shrink-0"
+                    />
+                    <span className="leading-snug">
+                      <span className="block font-medium">{factCounts(f, week).lead}.</span>
+                      <span className="block">{cap(f.truth)}.</span>
+                    </span>
+                  </span>
+                  <span className="text-muted-foreground mt-auto flex items-center gap-2 text-xs">
+                    <Dot color={colors[f.brand]} className="size-2" />
+                    <span>
+                      {factCounts(f, week).history}. On{" "}
+                      {listOf(f.engines.map((e) => engineLabel(s, e)))}.
+                    </span>
                   </span>
                 </span>
-                <span className="text-muted-foreground mt-auto flex items-center gap-2 text-xs">
-                  <Dot color={colors[f.brand]} className="size-2" />
-                  <span>
-                    {factCounts(f, week).history}. On{" "}
-                    {listOf(f.engines.map((e) => engineLabel(s, e)))}.
-                  </span>
-                </span>
-              </span>
-            }
-          />
-        </li>
-      ))}
-    </ul>
+              }
+            />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

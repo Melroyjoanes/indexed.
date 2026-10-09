@@ -81,14 +81,22 @@ export function buildPack(files: SourceFile[], config: TrackerConfig): Pack {
   if (!brands) throw new PackError("brands.json is missing from the data pack.");
   let brandsFile: BrandsFile;
   let facts: Record<string, unknown> = {};
+  const factsText = byName.get("facts.json");
   try {
     brandsFile = JSON.parse(brands) as BrandsFile;
-    const f = byName.get("facts.json");
-    if (f) facts = JSON.parse(f) as Record<string, unknown>;
+    if (factsText) facts = JSON.parse(factsText) as Record<string, unknown>;
   } catch {
     throw new PackError("brands.json or facts.json isn't valid JSON.");
   }
+  if (factsText !== undefined && (!facts || typeof facts !== "object" || Array.isArray(facts)))
+    throw new PackError("facts.json should be an object with one entry per company.");
   const settings = buildSettings(brandsFile, config, facts);
+  // A fact sheet that's there but checks nothing would make every answer look
+  // accurate. Refuse it, so an upload keeps the pack that was already loaded.
+  if (factsText !== undefined && Object.keys(settings.facts).length === 0)
+    throw new PackError(
+      "facts.json has no checkable facts for any company in brands.json (price, HQ, founding year, features or integrations), so wrong facts can't be checked.",
+    );
   const answerFiles = files.filter((f) => f.name.toLowerCase().endsWith(".jsonl"));
   if (answerFiles.length === 0) throw new PackError("No answer files (*.jsonl) in the data pack.");
   const { answers, report } = loadAnswers(answerFiles, settings);
