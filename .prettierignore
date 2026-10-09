@@ -4,3 +4,4 @@ data
 out
 coverage
 package-lock.json
+tests/accuracy/REPORT.md
