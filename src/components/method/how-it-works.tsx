@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useKeepSelection } from "@/components/shell/use-keep-selection";
 import { useMemo, type ReactNode } from "react";
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { AnswersSheet } from "@/components/answers/answers-sheet";
@@ -123,6 +124,7 @@ function Worked({ ex, name }: { ex: WorkedExample; name: string }) {
 }
 
 export function HowItWorks() {
+  const keep = useKeepSelection();
   const { results, scoring, week, client } = useDataset();
   const s = results.pack.settings;
   const name = s.brands[client]?.name ?? client;
@@ -338,7 +340,7 @@ export function HowItWorks() {
         </p>
         <p>
           Screens with an incomplete week say so at the top.{" "}
-          <Link href="/data" className="text-primary underline-offset-4 hover:underline">
+          <Link href={keep("/data")} className="text-primary underline-offset-4 hover:underline">
             See what came in each week
           </Link>
           .

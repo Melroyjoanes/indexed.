@@ -123,7 +123,7 @@ export function UploadPanel() {
             <WarningIcon weight="fill" className="mt-0.5 size-4 shrink-0" />
             {status.message}
           </p>
-        ) : status.kind === "done" ? (
+        ) : status.kind === "done" && source === "upload" ? (
           <p className="flex gap-2 text-sm">
             <CheckCircleIcon
               weight="fill"

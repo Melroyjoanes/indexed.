@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { cn } from "cn";
 import { useMaybeDataset, useUploadActions } from "@/components/data/dataset-provider";
 import { WeekPicker } from "./week-picker";
+import { useKeepSelection } from "./use-keep-selection";
 import { ViewAs } from "./view-as";
 
 const NAV = [
@@ -17,11 +18,9 @@ const NAV = [
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const params = useSearchParams();
   const data = useMaybeDataset();
   const upload = useUploadActions();
-  const qs = params.toString();
-  const keep = (href: string) => (qs ? `${href}?${qs}` : href);
+  const keep = useKeepSelection();
 
   return (
     <header className="bg-background/85 supports-[backdrop-filter]:bg-background/70 sticky top-0 z-30 border-b backdrop-blur">
