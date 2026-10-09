@@ -32,7 +32,7 @@ Other commands:
 ```bash
 npm run export       # writes out/mentions.csv and out/wrong_facts.csv
 npm run accuracy     # prints the accuracy check below
-npm run check        # lint, type check and the 283 tests
+npm run check        # lint, type check and the 301 tests
 ```
 
 **A new week** is just another file. Drop `week7.jsonl` into `data/` and it's picked up on the next page load, or upload it on the Data page to try it in your browser first. Field names, engine names and date formats that differ between exports are handled, so small format changes don't need code changes.
@@ -95,6 +95,9 @@ The commit history follows this order. Each change went in as a pull request tha
 
 - Week 4 dates like `07/09/2026` are day/month/year; the other weeks put week 4 in early September.
 - A duplicate `response_id` keeps its first copy.
+- Answer text must be a string. An object, list, number or true/false is counted as a malformed, failed answer and left out of scores, rather than read as text that names nobody.
+- An answer with no AI tool or question id still gets its rows in `mentions.csv` but isn't placed in any week.
+- `facts.json` is optional, but if it's there it must hold at least one checkable fact (price, HQ, founding year, features or integrations) for a company in `brands.json`, or the pack is refused. Fields of the wrong type are ignored. For a company with no checkable facts, every screen and report says fact-checking is unavailable instead of "no wrong facts".
 - Failed requests still get six rows in `mentions.csv` (not mentioned) but aren't counted in any score.
 - A price is a claim only when it's a starting price for a named company. "Usually costs between $15 and $60" isn't about anyone.
 - "Headquartered in Chicago" with no state is checked against the city.
