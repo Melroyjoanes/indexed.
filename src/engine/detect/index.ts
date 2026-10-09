@@ -20,12 +20,24 @@ export interface Analysis {
 /** Everything the tool reads from one AI answer. */
 /**
  * A "Sources:" list written into the answer text names sites, not
- * recommendations, so it's blanked before scanning (same length, so every
- * position still points at the original text).
+ * recommendations. Only the list is blanked: the heading line and the list
+ * items or bare links under it, up to the first line of ordinary text. Blanks
+ * keep the same length, so every position still points at the original text.
  */
-const SOURCES_LIST = /^[ \t]*(?:\*\*)?(?:sources|references|citations)(?:\*\*)?:[\s\S]*$/im;
-export const withoutSourcesList = (text: string) =>
-  text.replace(SOURCES_LIST, (m) => m.replace(/[^\n]/g, " "));
+const SOURCES_HEADING = /^[ \t]*(?:\*\*)?(?:sources|references|citations)(?:\*\*)?:/i;
+const LIST_ITEM =
+  /^[ \t]*(?:[-*•]|\d+[.)]|\[\d+\])\s|^[ \t]*(?:https?:\/\/|www\.)?[\w-]+(?:\.[\w-]+)+\S*[ \t]*$/i;
+export function withoutSourcesList(text: string): string {
+  const lines = text.split("\n");
+  let inList = false;
+  return lines
+    .map((line) => {
+      if (SOURCES_HEADING.test(line)) inList = true;
+      else if (inList && line.trim() !== "" && !LIST_ITEM.test(line)) inList = false;
+      return inList ? line.replace(/[^\n]/g, " ") : line;
+    })
+    .join("\n");
+}
 
 export function analyse(text: string, settings: Settings): Analysis {
   const { hits, masked } = findMentions(withoutSourcesList(text), settings);

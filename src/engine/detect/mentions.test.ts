@@ -82,3 +82,14 @@ describe("a sources list written into the answer", () => {
     expect([...r.positions.keys()]).toEqual(["trakvia", "fleetora"]);
   });
 });
+
+describe("the sources list ends where ordinary text starts", () => {
+  it("keeps companies named after the list", () => {
+    const r = analyse(
+      "Fleetora is easy to roll out.\n\nSources:\n- trakvia.com\n- [2] routelyne.com\n\nOverall, Corvane Fleet is my pick.",
+      settings,
+    );
+    expect([...r.positions.keys()]).toEqual(["fleetora", "corvane"]);
+    expect(r.tones.get("corvane")).toBe("recommended");
+  });
+});
