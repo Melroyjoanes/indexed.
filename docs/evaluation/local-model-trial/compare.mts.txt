@@ -1,0 +1,201 @@
+/**
+ * Phase 1 benchmark: rules-only vs model-only vs hybrid, on full answers.
+ *
+ *   npx tsx compare.ts sets/screening.json [--no-model]
+ *
+ * Mentions and positions always come from the rules (name detection isn't
+ * what the model is being tested for). Tone and wrong facts are scored per
+ * mode, with every kind of error counted separately.
+ */
+import { readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { analyse } from "../../../src/engine/detect/index";
+import { buildSettings, type TrackerConfig } from "../../../src/engine/config";
+import tracker from "../../../config/tracker.json" with { type: "json" };
+
+type Tone = "recommended" | "neutral" | "negative" | "not_recommended";
+interface Fact { brand: string; factKey: string; claimText: string }
+interface Case {
+  id: string;
+  text: string;
+  expected: { mentions: Record<string, { position: number; tone: Tone }>; wrongFacts: Fact[]; note?: string };
+}
+
+const has = (...on: string[]) =>
+  Object.fromEntries(
+    ["gps_tracking", "eld_compliance", "fuel_card_integration", "maintenance_alerts", "driver_app", "dashcams", "payroll"].map((f) => [f, on.includes(f)]),
+  );
+const BRANDS = {
+  client: { name: "Corvane Fleet", website: "corvanefleet.com" },
+  tracked_competitors: [
+    { name: "Trakvia", website: "trakvia.com" },
+    { name: "Routelyne", website: "routelyne.com" },
+    { name: "Gridwell Systems", website: "gridwell.io" },
+  ],
+  other_companies: [
+    { name: "Fleetora", website: "fleetora.com" },
+    { name: "Novahaul", website: "novahaul.com" },
+  ],
+};
+const FACTS = {
+  corvane: { starting_price_usd: 29, hq: "Columbus, Ohio", founded: 2014, features: has("gps_tracking", "eld_compliance", "fuel_card_integration", "maintenance_alerts", "driver_app"), integrations: ["QuickBooks", "WEX", "Comdata"] },
+  trakvia: { starting_price_usd: 39, hq: "Austin, Texas", founded: 2016, features: has("gps_tracking", "eld_compliance", "maintenance_alerts", "driver_app", "dashcams"), integrations: ["Salesforce"] },
+  routelyne: { starting_price_usd: 19, hq: "Phoenix, Arizona", founded: 2019, features: has("gps_tracking", "driver_app"), integrations: [] },
+  gridwell: { starting_price_usd: 55, hq: "Chicago, Illinois", founded: 2008, features: has("gps_tracking", "eld_compliance", "fuel_card_integration", "maintenance_alerts", "driver_app", "dashcams"), integrations: ["SAP", "Oracle"] },
+};
+const settings = buildSettings(BRANDS as never, tracker as unknown as TrackerConfig, FACTS);
+const NAMES: Record<string, string> = Object.fromEntries(Object.values(settings.brands).map((b) => [b.key, b.name]));
+
+const file = process.argv[2]!;
+const useModel = !process.argv.includes("--no-model");
+const cases = JSON.parse(readFileSync(file, "utf8")) as Case[];
+
+type Mode = "rules" | "model" | "hybridFill" | "hybridModelFirst";
+const MODES: Mode[] = useModel ? ["rules", "model", "hybridFill", "hybridModelFirst"] : ["rules"];
+const good = (t?: Tone) => t === "recommended";
+const bad = (t?: Tone) => t === "negative" || t === "not_recommended";
+const factId = (f: Fact) => `${f.brand}:${f.factKey}`;
+
+interface Tally {
+  tone: { right: number; of: number; fellBackNeutral: number; falseVerdict: number; flipped: number; wrongStrength: number };
+  facts: { expected: number; found: number; missed: number; falseAlarms: number; exactQuote: number; controlsClean: number; controls: number };
+  misses: string[];
+}
+const blank = (): Tally => ({
+  tone: { right: 0, of: 0, fellBackNeutral: 0, falseVerdict: 0, flipped: 0, wrongStrength: 0 },
+  facts: { expected: 0, found: 0, missed: 0, falseAlarms: 0, exactQuote: 0, controlsClean: 0, controls: 0 },
+  misses: [],
+});
+const tally: Record<Mode, Tally> = Object.fromEntries(MODES.map((m) => [m, blank()])) as Record<Mode, Tally>;
+const detection = { mentions: { right: 0, of: 0 }, positions: { right: 0, of: 0 }, errors: [] as string[] };
+const latencies: number[] = [];
+// model answers are cached per answer id, so labels can be corrected and the
+// run re-scored without re-running the model
+const TAG = process.env.TAG ?? "";
+const cacheFile = file.replace(/\.json$/, `.model${TAG ? "-" + TAG : ""}-cache.json`);
+const cache: Record<string, { tones: Record<string, Tone>; wrongFacts: Fact[]; ms: number }> = (() => {
+  try { return JSON.parse(readFileSync(cacheFile, "utf8")); } catch { return {}; }
+})();
+const perCase: unknown[] = [];
+
+const judge = useModel
+  ? ((await import(path.resolve(path.dirname(file), process.env.JUDGE ?? "../model/judge.ts"))) as {
+      judgeAnswer: (i: { text: string; companies: { key: string; name: string }[]; facts: typeof FACTS }) => Promise<{ tones: Record<string, Tone>; wrongFacts: Fact[]; raw: string; ms: number }>;
+    })
+  : null;
+
+for (const c of cases) {
+  const r = analyse(c.text, settings);
+  // detection, shared by every mode
+  for (const key of Object.keys(settings.brands)) {
+    const exp = c.expected.mentions[key];
+    detection.mentions.of += 1;
+    if (r.positions.has(key) === Boolean(exp)) detection.mentions.right += 1;
+    else detection.errors.push(`${c.id} ${key}: mentioned expected ${Boolean(exp)}, got ${r.positions.has(key)}`);
+    if (exp && r.positions.has(key)) {
+      detection.positions.of += 1;
+      if (r.positions.get(key) === exp.position) detection.positions.right += 1;
+      else detection.errors.push(`${c.id} ${key}: position expected ${exp.position}, got ${r.positions.get(key)}`);
+    }
+  }
+  const mentioned = [...r.positions.keys()];
+  const ruleTones = Object.fromEntries(mentioned.map((k) => [k, (r.tones.get(k) ?? "neutral") as Tone]));
+  const ruleFacts: Fact[] = r.claims.filter((x) => x.wrong).map((x) => ({ brand: x.brand, factKey: x.factKey, claimText: x.sentence }));
+
+  let modelTones: Record<string, Tone> = {};
+  let modelFacts: Fact[] = [];
+  if (judge && mentioned.length) {
+    let out = cache[c.id];
+    if (!out) {
+      const r2 = await judge.judgeAnswer({ text: c.text, companies: mentioned.map((k) => ({ key: k, name: NAMES[k]! })), facts: FACTS });
+      out = { tones: r2.tones, wrongFacts: r2.wrongFacts, ms: r2.ms };
+      cache[c.id] = out;
+      writeFileSync(cacheFile, JSON.stringify(cache, null, 1));
+      console.error(`${c.id} ${Math.round(r2.ms / 1000)}s`);
+    }
+    modelTones = out.tones;
+    modelFacts = out.wrongFacts;
+    latencies.push(out.ms);
+  }
+
+  const byMode: Record<Mode, { tones: Record<string, Tone>; facts: Fact[] }> = {
+    rules: { tones: ruleTones, facts: ruleFacts },
+    model: { tones: Object.fromEntries(mentioned.map((k) => [k, modelTones[k] ?? "neutral"])), facts: modelFacts },
+    hybridFill: {
+      tones: Object.fromEntries(mentioned.map((k) => [k, ruleTones[k] === "neutral" && modelTones[k] ? modelTones[k] : ruleTones[k]!])),
+      facts: [...ruleFacts, ...modelFacts.filter((m) => !ruleFacts.some((f) => factId(f) === factId(m)))],
+    },
+    hybridModelFirst: {
+      tones: Object.fromEntries(mentioned.map((k) => [k, modelTones[k] ?? ruleTones[k]!])),
+      facts: [...ruleFacts, ...modelFacts.filter((m) => !ruleFacts.some((f) => factId(f) === factId(m)))],
+    },
+  };
+
+  for (const m of MODES) {
+    const t = tally[m];
+    const out = byMode[m];
+    for (const [key, exp] of Object.entries(c.expected.mentions)) {
+      if (!mentioned.includes(key)) continue; // a detection miss, counted above
+      t.tone.of += 1;
+      const got = out.tones[key];
+      if (got === exp.tone) {
+        t.tone.right += 1;
+        continue;
+      }
+      t.misses.push(`${c.id} ${key}: tone expected ${exp.tone}, got ${got}`);
+      if (exp.tone === "neutral") t.tone.falseVerdict += 1;
+      else if (got === "neutral" || !got) t.tone.fellBackNeutral += 1;
+      else if ((good(exp.tone) && bad(got)) || (bad(exp.tone) && good(got))) t.tone.flipped += 1;
+      else t.tone.wrongStrength += 1;
+    }
+    const expIds = c.expected.wrongFacts.map(factId);
+    const gotIds = [...new Set(out.facts.map(factId))];
+    t.facts.expected += expIds.length;
+    for (const f of c.expected.wrongFacts) {
+      const hit = out.facts.find((g) => factId(g) === factId(f));
+      if (hit) {
+        t.facts.found += 1;
+        if (hit.claimText.trim() === f.claimText.trim() && c.text.includes(hit.claimText)) t.facts.exactQuote += 1;
+      } else {
+        t.facts.missed += 1;
+        t.misses.push(`${c.id} missed fact ${factId(f)}`);
+      }
+    }
+    for (const g of gotIds)
+      if (!expIds.includes(g)) {
+        t.facts.falseAlarms += 1;
+        t.misses.push(`${c.id} false fact ${g}`);
+      }
+    if (expIds.length === 0) {
+      t.facts.controls += 1;
+      if (gotIds.length === 0) t.facts.controlsClean += 1;
+    }
+  }
+  perCase.push({ id: c.id, ruleTones, modelTones, ruleFacts: ruleFacts.map(factId), modelFacts: modelFacts.map(factId) });
+}
+
+const pct = (a: number, b: number) => (b ? `${a}/${b} (${Math.round((100 * a) / b)}%)` : "n/a");
+const lines = [
+  `# ${path.basename(file)}: ${cases.length} answers`,
+  ``,
+  `Detection (rules, shared): mentions ${pct(detection.mentions.right, detection.mentions.of)}, positions ${pct(detection.positions.right, detection.positions.of)}`,
+  ...detection.errors.map((e) => `  - ${e}`),
+  ``,
+  `| Mode | Tone right | Fell back neutral | False verdict | Flipped | Wrong strength | Facts found | Missed | False alarms | Exact quote | Answers with no wrong fact left clean |`,
+  `|---|---|---|---|---|---|---|---|---|---|---|`,
+  ...MODES.map((m) => {
+    const t = tally[m];
+    return `| ${m} | ${pct(t.tone.right, t.tone.of)} | ${t.tone.fellBackNeutral} | ${t.tone.falseVerdict} | ${t.tone.flipped} | ${t.tone.wrongStrength} | ${pct(t.facts.found, t.facts.expected)} | ${t.facts.missed} | ${t.facts.falseAlarms} | ${t.facts.exactQuote}/${t.facts.found} | ${pct(t.facts.controlsClean, t.facts.controls)} |`;
+  }),
+  ``,
+  latencies.length
+    ? `Model latency per answer: mean ${Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)} ms, max ${Math.max(...latencies)} ms`
+    : `Model not run.`,
+  ``,
+  ...MODES.flatMap((m) => [`## ${m} errors`, ...tally[m].misses.map((x) => `- ${x}`), ``]),
+];
+const outFile = file.replace(/\.json$/, `.results${useModel ? (TAG ? "." + TAG : "") : ".rules"}.md`);
+writeFileSync(outFile, lines.join("\n"));
+writeFileSync(file.replace(/\.json$/, `.percase${TAG ? "." + TAG : ""}.json`), JSON.stringify(perCase, null, 1));
+console.log(lines.slice(0, 12 + detection.errors.length).join("\n"));
+console.log(`\nSaved ${outFile}`);

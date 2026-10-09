@@ -1,0 +1,349 @@
+// Local LLM judge (Transformers.js, Qwen2.5-1.5B-Instruct q4, CPU).
+// Mention detection is rule-based upstream; this module only judges tone and wrong facts.
+//
+// Design notes (driven by a 1.5B model on CPU):
+// - The answer is split into numbered sentences. The model cites a wrong fact by sentence NUMBER,
+//   so claimText is always the answer's own sentence, verbatim (no copying errors, fewer tokens).
+// - For each wrong fact the model must also quote what the answer SAYS. Post-validation keeps the
+//   claim only if that quote really is in the sentence and really differs from the fact sheet.
+//   This filters the small model's tendency to flag true statements or echo the fact sheet.
+import { pipeline, env, type TextGenerationPipeline } from "@huggingface/transformers";
+
+env.cacheDir = new URL("./.cache", import.meta.url).pathname;
+env.allowLocalModels = false;
+
+export const MODEL_ID = "onnx-community/Qwen2.5-1.5B-Instruct";
+export const DTYPE = "q4" as const; // q4f16 also runs on CPU but decodes ~4x slower
+export const MAX_NEW_TOKENS = 200;
+
+export const FEATURE_KEYS = [
+  "gps_tracking",
+  "eld_compliance",
+  "fuel_card_integration",
+  "maintenance_alerts",
+  "driver_app",
+  "dashcams",
+  "payroll",
+] as const;
+export type FeatureKey = (typeof FEATURE_KEYS)[number];
+
+export interface FactSheet {
+  starting_price_usd?: number;
+  hq?: string;
+  founded?: number;
+  integrations?: string[];
+  features?: Partial<Record<FeatureKey, boolean>>;
+}
+
+export type Tone = "recommended" | "neutral" | "negative" | "not_recommended";
+export const TONES: readonly Tone[] = ["recommended", "neutral", "negative", "not_recommended"];
+
+export const ALLOWED_FACT_KEYS: readonly string[] = [
+  "starting_price_usd",
+  "hq",
+  "founded",
+  "integrations",
+  ...FEATURE_KEYS.map((f) => `features.${f}`),
+];
+
+export interface JudgeInput {
+  text: string;
+  companies: { key: string; name: string }[];
+  facts: Record<string, FactSheet>;
+}
+export interface JudgeOutput {
+  tones: Record<string, Tone>;
+  wrongFacts: { brand: string; factKey: string; claimText: string }[];
+  raw: string;
+  ms: number;
+}
+
+// ---------- singleton pipeline ----------
+let genPromise: Promise<TextGenerationPipeline> | null = null;
+export function getGenerator(): Promise<TextGenerationPipeline> {
+  if (!genPromise) {
+    genPromise = pipeline("text-generation", MODEL_ID, { dtype: DTYPE, device: "cpu" }) as Promise<TextGenerationPipeline>;
+  }
+  return genPromise;
+}
+
+// ---------- sentence splitting ----------
+/** Split into sentences / lines. Every returned string is an exact substring of `text`. */
+export function splitSentences(text: string): string[] {
+  const out: string[] = [];
+  for (const line of text.split(/\n+/)) {
+    const t = line.trim();
+    if (!t || /^\|?[\s|:-]+\|?$/.test(t)) continue; // skip blank + markdown table separators
+    if (t.startsWith("|")) {
+      out.push(t);
+      continue;
+    }
+    // sentence boundary: . ! ? followed by space + capital/quote/digit/$ (avoids "$29.99", "e.g. x")
+    const parts = t.split(/(?<=[.!?])\s+(?=["'(“$A-Z0-9*])/);
+    for (const p of parts) if (p.trim()) out.push(p.trim());
+  }
+  return out;
+}
+
+// ---------- prompt ----------
+// The model is used as a reader/extractor: it labels tone and lists every factual claim it sees
+// (price, HQ, founding year, integrations, features) with the value the answer states. Whether a
+// claim CONTRADICTS the fact sheet is then decided deterministically in contradicts() below.
+// The fact sheet is deliberately NOT shown to the model: in testing, the 1.5B model echoed fact-sheet
+// values back as "claims" and was unreliable at the comparison itself.
+export const SYSTEM_PROMPT = `You annotate an AI assistant's answer about fleet-management software vendors. Output one JSON object only, no prose.
+
+"tones": for EACH listed company key, the FINAL verdict the answer gives it. If the answer changes its mind, the LATER verdict wins.
+- "recommended": endorsed, recommended, picked, called a good or best choice.
+- "neutral": only named, listed or described, with no verdict.
+- "negative": criticised (a weakness, drawback or limitation) but the reader is NOT told to avoid it.
+- "not_recommended": the reader is told to avoid, skip or reject it, or it is called not recommended.
+In a table, the LAST column is the row's verdict.
+If the reader is told to avoid, skip or stay away from it, use "not_recommended" (not "negative").
+Being listed, compared or mentioned in a guide, with no opinion, is "neutral".
+"no major drawbacks", "helps avoid errors", "not expensive" are NOT criticism.
+
+"claims": list EVERY sentence that states one of these facts about a listed company:
+- starting_price_usd: says = the dollar price
+- hq: says = the headquarters city and state
+- founded: says = the founding year
+- integrations: says = the product it integrates with (one claim per product)
+- features.gps_tracking, features.eld_compliance, features.fuel_card_integration, features.maintenance_alerts, features.driver_app, features.dashcams, features.payroll: says = "yes" if the sentence says the company has it, "no" if it says the company lacks it
+s = the sentence number. "It" refers to the company named just before. List claims whether or not they are true.
+
+Format:
+{"tones":{"<company key>":"<label>"},"claims":[{"s":<n>,"brand":"<company key>","key":"<fact key>","says":"<value>"}]}`;
+
+const EXAMPLE_1_USER = `COMPANIES:
+- acme = "Acme Track"
+- zeta = "Zeta"
+- bolt = "BoltFleet"
+
+ANSWER SENTENCES:
+[1] Acme Track starts at $25 per vehicle and is based in Boston, Massachusetts.
+[2] It also includes dashcams but has no payroll module.
+[3] BoltFleet integrates with Xero, but its interface is clunky.
+[4] Zeta looked promising at first, but I would skip Zeta because of hidden fees.
+[5] Acme Track has no major drawbacks, so it is my top pick.`;
+
+const EXAMPLE_1_ASSISTANT = `{"tones":{"acme":"recommended","zeta":"not_recommended","bolt":"negative"},"claims":[{"s":1,"brand":"acme","key":"starting_price_usd","says":"$25"},{"s":1,"brand":"acme","key":"hq","says":"Boston, Massachusetts"},{"s":2,"brand":"acme","key":"features.dashcams","says":"yes"},{"s":2,"brand":"acme","key":"features.payroll","says":"no"},{"s":3,"brand":"bolt","key":"integrations","says":"Xero"}]}`;
+
+const EXAMPLE_2_USER = `COMPANIES:
+- kite = "Kite GPS"
+- orbo = "Orbo"
+
+ANSWER SENTENCES:
+[1] Kite GPS and Orbo are both widely used by regional carriers.
+[2] | Vendor | Founded | Verdict |
+[3] | Kite GPS | 2011 | Not recommended |
+[4] | Orbo | 2018 | Neutral |`;
+
+const EXAMPLE_2_ASSISTANT = `{"tones":{"kite":"not_recommended","orbo":"neutral"},"claims":[{"s":3,"brand":"kite","key":"founded","says":"2011"},{"s":4,"brand":"orbo","key":"founded","says":"2018"}]}`;
+
+export function buildUserPrompt(input: Pick<JudgeInput, "companies">, sentences: string[]): string {
+  const list = input.companies.map((c) => `- ${c.key} = "${c.name}"`).join("\n");
+  const numbered = sentences.map((s, i) => `[${i + 1}] ${s}`).join("\n");
+  return `COMPANIES:\n${list}\n\nANSWER SENTENCES:\n${numbered}`;
+}
+
+// ---------- parsing ----------
+/** Return the balanced {...} or [...] starting at s[start] (string-aware), or null. */
+function balancedAt(s: string, start: number): string | null {
+  const open = s[start];
+  const close = open === "{" ? "}" : open === "[" ? "]" : "";
+  if (!close) return null;
+  let depth = 0, inStr = false, esc = false;
+  for (let i = start; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === "\\") esc = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') inStr = true;
+    else if (ch === "{" || ch === "[") depth++;
+    else if (ch === "}" || ch === "]") {
+      depth--;
+      if (depth === 0) return ch === close ? s.slice(start, i + 1) : null;
+    }
+  }
+  return null;
+}
+
+function tryParse(t: string | null): unknown {
+  if (t === null) return undefined;
+  try {
+    return JSON.parse(t);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Parse the first JSON object in `raw`. If the whole object is malformed (the small model sometimes
+ *  appends junk keys after a valid "claims" array), fall back to parsing the "tones" object and the
+ *  "claims" array individually. Returns null when nothing usable is found (= parse failure). */
+export function parseRaw(raw: string): { tones?: unknown; claims?: unknown } | null {
+  const start = raw.indexOf("{");
+  if (start >= 0) {
+    const whole = tryParse(balancedAt(raw, start));
+    if (whole && typeof whole === "object" && !Array.isArray(whole)) return whole as { tones?: unknown; claims?: unknown };
+  }
+  const section = (name: string, opener: string): unknown => {
+    const m = new RegExp(`"${name}"\\s*:\\s*\\${opener}`).exec(raw);
+    return m ? tryParse(balancedAt(raw, m.index + m[0].length - 1)) : undefined;
+  };
+  const tones = section("tones", "{");
+  let claims = section("claims", "[");
+  if (claims === undefined) {
+    // Salvage: parse each well-formed {...} claim object after "claims":[ individually.
+    const m = /"claims"\s*:\s*\[/.exec(raw);
+    if (m) {
+      const items: unknown[] = [];
+      let i = m.index + m[0].length;
+      while ((i = raw.indexOf("{", i)) >= 0) {
+        const chunk = balancedAt(raw, i);
+        if (!chunk) break;
+        const obj = tryParse(chunk);
+        if (obj !== undefined) items.push(obj);
+        i += chunk.length;
+      }
+      if (items.length) claims = items;
+    }
+  }
+  if (tones === undefined && claims === undefined) return null;
+  return { tones, claims };
+}
+
+const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9$.]+/g, " ").trim();
+
+/** Does the model's "says" value genuinely contradict the fact sheet, and is it grounded in the sentence? */
+const FEATURE_PATTERNS: Record<FeatureKey, RegExp> = {
+  gps_tracking: /\bgps\b|tracking|location/i,
+  eld_compliance: /\beld\b|electronic logging|hours[- ]of[- ]service|\bhos\b/i,
+  fuel_card_integration: /fuel/i,
+  maintenance_alerts: /maintenance/i,
+  driver_app: /driver app|mobile app|\bapp\b/i,
+  dashcams: /dash ?cams?|dashboard cameras?|\bcameras?\b/i,
+  payroll: /payroll/i,
+};
+
+/** Is the claim actually stated in this sentence? (feature words present / quoted value present) */
+function grounded(key: string, says: string, sentence: string): boolean {
+  if (key.startsWith("features.")) {
+    const pat = FEATURE_PATTERNS[key.slice("features.".length) as FeatureKey];
+    return !!pat && pat.test(sentence);
+  }
+  const v = says.trim().replace(/^\$/, "");
+  if (!v) return false;
+  const at = sentence.toLowerCase().indexOf(v.toLowerCase());
+  if (at < 0) return false;
+  if (key === "integrations") return /[A-Z0-9]/.test(sentence[at]); // product names are capitalised
+  return true;
+}
+
+function contradicts(key: string, says: string, sentence: string, fs: FactSheet): boolean {
+  const sn = norm(sentence);
+  const v = norm(says);
+  if (!v) return false;
+  if (key.startsWith("features.")) {
+    const f = key.slice("features.".length) as FeatureKey;
+    const truth = fs.features?.[f];
+    if (truth === undefined) return false;
+    const claimed = /^(yes|true|has|includes?|offers?|supports?)\b/.test(v) ? true : /^(no|false|lacks?|none|not|does not|doesn t)\b/.test(v) ? false : null;
+    return claimed !== null && claimed !== truth;
+  }
+  if (!sn.includes(v.replace(/^\$/, "")) && !sn.includes(v)) return false; // value must appear in the sentence
+  if (key === "starting_price_usd") {
+    if (fs.starting_price_usd === undefined) return false;
+    const n = Number(v.replace(/[^0-9.]/g, ""));
+    return Number.isFinite(n) && n > 0 && n !== fs.starting_price_usd;
+  }
+  if (key === "founded") {
+    if (fs.founded === undefined) return false;
+    const y = Number((v.match(/\b(1[89]|20)\d{2}\b/) ?? [""])[0]);
+    return y > 0 && y !== fs.founded;
+  }
+  if (key === "hq") {
+    if (!fs.hq) return false;
+    const city = norm(fs.hq.split(",")[0]);
+    return !v.includes(city) && !sn.includes(city);
+  }
+  if (key === "integrations") {
+    if (!fs.integrations) return false;
+    const listed = fs.integrations.map(norm);
+    if (/^(none|no|no integrations?)$/.test(v)) return false; // "has none" claims are too ambiguous for a 1.5B model; never flag
+    return !listed.some((i) => v.includes(i) || i.includes(v));
+  }
+  return false;
+}
+
+export function postValidate(parsed: unknown, input: JudgeInput, sentences: string[]): Pick<JudgeOutput, "tones" | "wrongFacts"> {
+  const tones: Record<string, Tone> = {};
+  const wrongFacts: JudgeOutput["wrongFacts"] = [];
+  if (!parsed || typeof parsed !== "object") return { tones, wrongFacts };
+  const p = parsed as Record<string, unknown>;
+  const keys = new Set(input.companies.map((c) => c.key));
+  const nameToKey = new Map(input.companies.map((c) => [c.name.toLowerCase(), c.key]));
+  const resolveKey = (k: string) => (keys.has(k) ? k : nameToKey.get(k.toLowerCase()) ?? (keys.has(k.toLowerCase()) ? k.toLowerCase() : null));
+
+  if (p.tones && typeof p.tones === "object") {
+    for (const [k, v] of Object.entries(p.tones as Record<string, unknown>)) {
+      const key = resolveKey(k);
+      if (key && typeof v === "string" && (TONES as readonly string[]).includes(v)) tones[key] = v as Tone;
+    }
+  }
+  const wf = (p.claims ?? p.wrong ?? p.wrong_facts) as unknown;
+  if (Array.isArray(wf)) {
+    const seen = new Set<string>();
+    for (const item of wf) {
+      if (!item || typeof item !== "object") continue;
+      const it = item as Record<string, unknown>;
+      const idx = Number(it.s);
+      const factKey = String(it.key ?? it.factKey ?? "");
+      if (!Number.isInteger(idx) || idx < 1 || idx > sentences.length) continue;
+      if (typeof it.brand !== "string") continue;
+      const brand = resolveKey(it.brand);
+      if (!brand || !input.facts[brand]) continue;
+      if (!ALLOWED_FACT_KEYS.includes(factKey)) continue;
+      // The model's sentence number is sometimes off by one; accept the cited sentence or a neighbour,
+      // whichever actually states the claim.
+      const says = String(it.says ?? "");
+      const at = [idx, idx - 1, idx + 1].find((n) => n >= 1 && n <= sentences.length && grounded(factKey, says, sentences[n - 1]));
+      if (at === undefined) continue;
+      const claimText = sentences[at - 1];
+      if (!input.text.includes(claimText)) continue;
+      if (!contradicts(factKey, says, claimText, input.facts[brand])) continue;
+      const sig = `${brand}|${factKey}|${claimText}`;
+      if (seen.has(sig)) continue;
+      seen.add(sig);
+      wrongFacts.push({ brand, factKey, claimText });
+    }
+  }
+  return { tones, wrongFacts };
+}
+
+// ---------- main ----------
+export async function judgeAnswer(input: JudgeInput): Promise<JudgeOutput> {
+  const t0 = performance.now();
+  let raw = "";
+  try {
+    const gen = await getGenerator();
+    const sentences = splitSentences(input.text);
+    const messages = [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: EXAMPLE_1_USER },
+      { role: "assistant", content: EXAMPLE_1_ASSISTANT },
+      { role: "user", content: EXAMPLE_2_USER },
+      { role: "assistant", content: EXAMPLE_2_ASSISTANT },
+      { role: "user", content: buildUserPrompt(input, sentences) },
+    ];
+    const out = (await gen(messages, { max_new_tokens: MAX_NEW_TOKENS, do_sample: false, return_full_text: false })) as any;
+    const g = out?.[0]?.generated_text;
+    raw = typeof g === "string" ? g : Array.isArray(g) ? String(g.at(-1)?.content ?? "") : "";
+    const { tones, wrongFacts } = postValidate(parseRaw(raw), input, sentences);
+    return { tones, wrongFacts, raw, ms: Math.round(performance.now() - t0) };
+  } catch (e) {
+    return { tones: {}, wrongFacts: [], raw: raw || `ERROR: ${(e as Error)?.message ?? String(e)}`, ms: Math.round(performance.now() - t0) };
+  }
+}

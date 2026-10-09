@@ -380,7 +380,7 @@ export function HowItWorks() {
           rules were written after reading the sample data, so this is the best case.
         </p>
         <p>
-          On a fresh set of sentences in new wording, written before it was ever run, tone was right
+          On its first run, a set of sentences in new wording written before the run got tone right
           on {fr.tones.right} of {fr.tones.of}. {fr.tonesMissedAsMentioned} of the{" "}
           {fr.tones.of - fr.tones.right} misses showed as Mentioned rather than a wrong verdict, and{" "}
           {fr.tonesFlipped} turned praise into criticism or the reverse. Wrong facts were found in{" "}

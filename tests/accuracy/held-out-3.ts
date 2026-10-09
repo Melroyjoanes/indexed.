@@ -5,6 +5,10 @@
  * it. Once a change is made after reading these results, the set counts as
  * seen and the next measurement needs a new one.
  *
+ * Status: seen. Its first run was tone 8/12 and facts 3/4. Rule changes made
+ * after the local model trial were informed by its misses, so it now serves
+ * only as a regression sample (see docs/evaluation/local-model-trial.md).
+ *
  * Facts list the exact contradictions expected; an empty list is a negative
  * control (a true statement, or a claim the fact sheet doesn't cover).
  */

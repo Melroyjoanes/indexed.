@@ -1,0 +1,648 @@
+[
+  {
+    "id": "s01",
+    "text": "For a 40-truck regional carrier, the three names that come up most are Corvane Fleet, Trakvia and Routelyne. Corvane Fleet covers GPS tracking, ELD compliance and fuel card integration in one plan. Trakvia has a polished dashboard and built-in dashcam support. Routelyne is the lightweight option, mostly GPS plus a driver app. If I had to pick one for your setup, Corvane Fleet would be my first call.",
+    "expected": {
+      "mentions": {
+        "corvane": {
+          "position": 1,
+          "tone": "recommended"
+        },
+        "trakvia": {
+          "position": 2,
+          "tone": "neutral"
+        },
+        "routelyne": {
+          "position": 3,
+          "tone": "neutral"
+        }
+      },
+      "wrongFacts": [],
+      "note": "Verdict arrives in the last sentence; three true feature statements are controls."
+    }
+  },
+  {
+    "id": "s02",
+    "text": "Trakvia gets a lot of praise for its clean interface and quick setup. Pricing begins at $25 per vehicle per month for Trakvia's base tier. However, after looking at the support complaints, I'd steer clear of it for a fleet your size. Gridwell Systems is pricier but far more stable, and it's the one I'd go with.",
+    "expected": {
+      "mentions": {
+        "trakvia": {
+          "position": 1,
+          "tone": "not_recommended"
+        },
+        "gridwell": {
+          "position": 2,
+          "tone": "recommended"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "trakvia",
+          "factKey": "starting_price_usd",
+          "claimText": "Pricing begins at $25 per vehicle per month for Trakvia's base tier."
+        }
+      ],
+      "note": "Praise then 'steer clear' flips Trakvia to not_recommended; wrong Trakvia price."
+    }
+  },
+  {
+    "id": "s03",
+    "text": "Corvane Logistics is a freight brokerage, not a software vendor, so it won't help with telematics. Corvane Logistics was founded in 2011 and is based in Memphis. For actual fleet-tracking software, Fleetora and Novahaul are both on the market. Fleetora is easier to roll out, and I'd shortlist it first.",
+    "expected": {
+      "mentions": {
+        "fleetora": {
+          "position": 1,
+          "tone": "recommended"
+        },
+        "novahaul": {
+          "position": 2,
+          "tone": "neutral"
+        }
+      },
+      "wrongFacts": [],
+      "note": "Corvane Logistics distractor with founded/HQ claims that must not attach to Corvane Fleet."
+    }
+  },
+  {
+    "id": "s04",
+    "text": "Here's a quick comparison for a 25-van delivery business:\n\n| Company | Strengths | Verdict |\n|---|---|---|\n| Routelyne | Cheapest entry point, simple driver app | Good for tiny fleets, but not worth it at your size |\n| Corvane Fleet | ELD, fuel cards, maintenance alerts | Best overall fit |\n| Gridwell Systems | Deepest feature set, SAP and Oracle hooks | Overkill and expensive |\n\nOverall, Corvane Fleet balances cost and coverage best.",
+    "expected": {
+      "mentions": {
+        "routelyne": {
+          "position": 1,
+          "tone": "not_recommended"
+        },
+        "corvane": {
+          "position": 2,
+          "tone": "recommended"
+        },
+        "gridwell": {
+          "position": 3,
+          "tone": "negative"
+        }
+      },
+      "wrongFacts": [],
+      "note": "Table verdict column; Routelyne verdict starts positive ('Good') but ends 'not worth it at your size'."
+    }
+  },
+  {
+    "id": "s05",
+    "text": "There isn't one right answer here; it depends on whether you need ELD compliance or just location pings. For a five-vehicle landscaping crew, a phone-based tracker or even the telematics built into your vehicles may be enough. Most dedicated fleet platforms run between $20 and $60 per vehicle per month. I'd start with a 30-day trial of whichever tool fits your budget.",
+    "expected": {
+      "mentions": {},
+      "wrongFacts": [],
+      "note": "No tracked company; generic price range is not a claim."
+    }
+  },
+  {
+    "id": "s06",
+    "text": "Corvane Fleet is a mid-market telematics platform aimed at trucking and field-service fleets. The company is headquartered in Denver, Colorado. It has been in business since 2011 and now serves several thousand customers. Its maintenance alerts and fuel card integration are the main reasons fleet managers pick it. For a mixed fleet of trucks and service vans, it's hard to beat.",
+    "expected": {
+      "mentions": {
+        "corvane": {
+          "position": 1,
+          "tone": "recommended"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "corvane",
+          "factKey": "hq",
+          "claimText": "The company is headquartered in Denver, Colorado."
+        },
+        {
+          "brand": "corvane",
+          "factKey": "founded",
+          "claimText": "It has been in business since 2011 and now serves several thousand customers."
+        }
+      ],
+      "note": "Back-references ('The company', 'It') carry wrong HQ and founded; customer count and true features are controls."
+    }
+  },
+  {
+    "id": "s07",
+    "text": "Novahaul and Trakvia both target small and mid-sized fleets. Users report frequent crashes in the Novahaul driver app, especially on older Android phones. Trakvia's mobile experience is smoother, and it integrates with Salesforce if your dispatch team already lives there. Neither is perfect, but Trakvia is the safer bet.",
+    "expected": {
+      "mentions": {
+        "novahaul": {
+          "position": 1,
+          "tone": "negative"
+        },
+        "trakvia": {
+          "position": 2,
+          "tone": "recommended"
+        }
+      },
+      "wrongFacts": [],
+      "note": "User-complaint negative; true Salesforce integration is a control."
+    }
+  },
+  {
+    "id": "s08",
+    "text": "Gridwell Systems has no major drawbacks for an enterprise fleet. Its automated logs help avoid paperwork errors during DOT inspections. Gridwell Systems was founded in 2008 in Chicago, Illinois and integrates with SAP and Oracle. If you need the full stack, it's the one I'd recommend.",
+    "expected": {
+      "mentions": {
+        "gridwell": {
+          "position": 1,
+          "tone": "recommended"
+        }
+      },
+      "wrongFacts": [],
+      "note": "Negations that are not criticism ('no major drawbacks', 'help avoid'); true founded/HQ/integrations controls."
+    }
+  },
+  {
+    "id": "s09",
+    "text": "Corvain is a solid mid-priced option for regional carriers. Corvain doesn't connect to QuickBooks, so you'd need a middleware tool for accounting sync. Routelyne is cheaper, but the missing ELD support is a real problem for interstate trucks. Between the two, I'd lean toward Corvain for compliance reasons.",
+    "expected": {
+      "mentions": {
+        "corvane": {
+          "position": 1,
+          "tone": "recommended"
+        },
+        "routelyne": {
+          "position": 2,
+          "tone": "negative"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "corvane",
+          "factKey": "integrations",
+          "claimText": "Corvain doesn't connect to QuickBooks, so you'd need a middleware tool for accounting sync."
+        }
+      ],
+      "note": "Misspelling 'Corvain' must resolve to corvane; wrong integration claim; Routelyne no-ELD is true."
+    }
+  },
+  {
+    "id": "s10",
+    "text": "Corvane Fleet's onboarding can be slow, and a few reviewers mention clunky reporting exports. Corvane Fleet includes built-in dashcams with AI incident detection. Even with those rough edges, I'd still choose it over Fleetora for a 60-truck operation. Fleetora is fine for basic tracking but lacks depth.",
+    "expected": {
+      "mentions": {
+        "corvane": {
+          "position": 1,
+          "tone": "recommended"
+        },
+        "fleetora": {
+          "position": 2,
+          "tone": "negative"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "corvane",
+          "factKey": "features.dashcams",
+          "claimText": "Corvane Fleet includes built-in dashcams with AI incident detection."
+        }
+      ],
+      "note": "Criticised first then recommended anyway; wrong dashcam feature claim."
+    }
+  },
+  {
+    "id": "s11",
+    "text": "Here are the options I'd consider for a construction fleet:\n\n- **Gridwell Systems**: the most complete platform, with dashcams and fuel card support built in.\n- **Trakvia**: mid-range, with dashcams and maintenance alerts.\n- **Novahaul**: another option, also on the market for equipment tracking.\n- **Routelyne**: budget GPS only.\n\nMy top pick is Gridwell Systems because heavy equipment needs the extra telematics depth.",
+    "expected": {
+      "mentions": {
+        "gridwell": {
+          "position": 1,
+          "tone": "recommended"
+        },
+        "trakvia": {
+          "position": 2,
+          "tone": "neutral"
+        },
+        "novahaul": {
+          "position": 3,
+          "tone": "neutral"
+        },
+        "routelyne": {
+          "position": 4,
+          "tone": "neutral"
+        }
+      },
+      "wrongFacts": [],
+      "note": "Bold-label bullet list; hedged neutral mentions; true feature bullets are controls."
+    }
+  },
+  {
+    "id": "s12",
+    "text": "If budget matters most, compare Fleetora and Corvane Fleet. Corvane Fleet costs $49 a truck monthly. Fleetora publishes flat pricing with no installation fee. For a cost-sensitive fleet, I'd go with Fleetora.",
+    "expected": {
+      "mentions": {
+        "fleetora": {
+          "position": 1,
+          "tone": "recommended"
+        },
+        "corvane": {
+          "position": 2,
+          "tone": "neutral"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "corvane",
+          "factKey": "starting_price_usd",
+          "claimText": "Corvane Fleet costs $49 a truck monthly."
+        }
+      ],
+      "note": "Wrong Corvane price phrased per truck; Fleetora installation-fee claim is off-sheet."
+    }
+  },
+  {
+    "id": "s13",
+    "text": "Trakvia launched in 2012 and has grown steadily in the Texas market. It supports fuel card integration with most major card providers. That said, if you run long-haul routes, I'd look elsewhere, since its ELD workflow is built for short-haul.",
+    "expected": {
+      "mentions": {
+        "trakvia": {
+          "position": 1,
+          "tone": "not_recommended"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "trakvia",
+          "factKey": "founded",
+          "claimText": "Trakvia launched in 2012 and has grown steadily in the Texas market."
+        },
+        {
+          "brand": "trakvia",
+          "factKey": "features.fuel_card_integration",
+          "claimText": "It supports fuel card integration with most major card providers."
+        }
+      ],
+      "note": "Indirect rejection 'look elsewhere'; wrong founded year and fuel-card feature via 'It'."
+    }
+  },
+  {
+    "id": "s14",
+    "text": "Don't confuse Corvane Fleet with Corvane Logistics, which is a trucking carrier rather than a software company. Corvane Logistics has been in business since 1998 and runs about 300 trucks. Corvane Fleet, the software, starts at $29 per vehicle per month and is headquartered in Columbus, Ohio. For your use case, Corvane Fleet is the one I'd shortlist.",
+    "expected": {
+      "mentions": {
+        "corvane": {
+          "position": 1,
+          "tone": "recommended"
+        }
+      },
+      "wrongFacts": [],
+      "note": "Both Corvane names present; Logistics' 1998 founding must not be flagged; true price/HQ controls."
+    }
+  },
+  {
+    "id": "s15",
+    "text": "Gridwell Systems is the most feature-rich platform here, and it even includes payroll processing for drivers. Its dashcam and ELD modules are mature. But at $55 per vehicle with a 36-month contract, it's not worth it at your size of eight vans. Routelyne would cover your basic GPS needs for far less, and it's what I'd go with.",
+    "expected": {
+      "mentions": {
+        "gridwell": {
+          "position": 1,
+          "tone": "not_recommended"
+        },
+        "routelyne": {
+          "position": 2,
+          "tone": "recommended"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "gridwell",
+          "factKey": "features.payroll",
+          "claimText": "Gridwell Systems is the most feature-rich platform here, and it even includes payroll processing for drivers."
+        }
+      ],
+      "note": "Praise then 'not worth it at your size'; wrong payroll feature; true $55 price is a control."
+    }
+  },
+  {
+    "id": "s16",
+    "text": "Routelyne is based in San Diego, California. It focuses on simple GPS tracking with a driver app. It also sends maintenance alerts based on odometer readings. It's another option if your fleet is mostly local deliveries.",
+    "expected": {
+      "mentions": {
+        "routelyne": {
+          "position": 1,
+          "tone": "neutral"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "routelyne",
+          "factKey": "hq",
+          "claimText": "Routelyne is based in San Diego, California."
+        },
+        {
+          "brand": "routelyne",
+          "factKey": "features.maintenance_alerts",
+          "claimText": "It also sends maintenance alerts based on odometer readings."
+        }
+      ],
+      "note": "Single-company neutral description with wrong HQ and wrong maintenance-alerts feature."
+    }
+  },
+  {
+    "id": "s17",
+    "text": "I compared five platforms for a 100-vehicle utility fleet.\n\n| Company | Strengths | Verdict |\n|---|---|---|\n| Fleetora | Clean reporting | Also an option |\n| Gridwell Systems | Enterprise depth, SAP/Oracle | My first choice |\n| Trakvia | Dashcams, Salesforce sync | Support is slow to respond |\n| Novahaul | Low cost | Skip it, too immature |\n| CorvaneFleet | Fuel cards, QuickBooks | Would also shortlist |\n\nIf you only demo one, make it Gridwell Systems.",
+    "expected": {
+      "mentions": {
+        "fleetora": {
+          "position": 1,
+          "tone": "neutral"
+        },
+        "gridwell": {
+          "position": 2,
+          "tone": "recommended"
+        },
+        "trakvia": {
+          "position": 3,
+          "tone": "negative"
+        },
+        "novahaul": {
+          "position": 4,
+          "tone": "not_recommended"
+        },
+        "corvane": {
+          "position": 5,
+          "tone": "recommended"
+        }
+      },
+      "wrongFacts": [],
+      "note": "Five-row table with all four tones; 'CorvaneFleet' alias in last row."
+    }
+  },
+  {
+    "id": "s18",
+    "text": "If you're shipping with Corvane Logistics, their drivers already use an in-house tracking portal, so you may not need your own software. Corvane Logistics charges a $150 installation fee for its trailer sensors. I'd ask their account manager for API access before buying anything.",
+    "expected": {
+      "mentions": {},
+      "wrongFacts": [],
+      "note": "Only Corvane Logistics appears; must yield zero tracked mentions."
+    }
+  },
+  {
+    "id": "s19",
+    "text": "Trakvia integrates with HubSpot, which helps if your sales team books service jobs. Fleetora is also on the market and tends to be cheaper. I don't have a strong preference between them; trial both.",
+    "expected": {
+      "mentions": {
+        "trakvia": {
+          "position": 1,
+          "tone": "neutral"
+        },
+        "fleetora": {
+          "position": 2,
+          "tone": "neutral"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "trakvia",
+          "factKey": "integrations",
+          "claimText": "Trakvia integrates with HubSpot, which helps if your sales team books service jobs."
+        }
+      ],
+      "note": "No verdict for either; wrong integration (HubSpot)."
+    }
+  },
+  {
+    "id": "s20",
+    "text": "Corvane Fleet pricing begins at $25 per vehicle per month. The platform covers ELD compliance and maintenance alerts well. However, given how often its Android app has been crashing lately according to user reviews, I'd steer clear until they ship a fix. Novahaul is the better pick right now.",
+    "expected": {
+      "mentions": {
+        "corvane": {
+          "position": 1,
+          "tone": "not_recommended"
+        },
+        "novahaul": {
+          "position": 2,
+          "tone": "recommended"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "corvane",
+          "factKey": "starting_price_usd",
+          "claimText": "Corvane Fleet pricing begins at $25 per vehicle per month."
+        }
+      ],
+      "note": "Positive features then 'steer clear' flips to not_recommended; wrong price."
+    }
+  },
+  {
+    "id": "s21",
+    "text": "Fleetora holds a 4.6-star rating on G2 with over 300 reviews. Novahaul claims more than 2,000 customers across North America. Both are reasonable, but Fleetora's reporting is noticeably better, so I'd go with Fleetora.",
+    "expected": {
+      "mentions": {
+        "fleetora": {
+          "position": 1,
+          "tone": "recommended"
+        },
+        "novahaul": {
+          "position": 2,
+          "tone": "neutral"
+        }
+      },
+      "wrongFacts": [],
+      "note": "Ratings and customer counts for brands with no facts must not be flagged."
+    }
+  },
+  {
+    "id": "s22",
+    "text": "Gridwell Systems has been around since 2003 and is one of the older names in telematics. The company is based in Milwaukee, Wisconsin. Customers frequently complain about its long contract terms and expensive hardware.",
+    "expected": {
+      "mentions": {
+        "gridwell": {
+          "position": 1,
+          "tone": "negative"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "gridwell",
+          "factKey": "founded",
+          "claimText": "Gridwell Systems has been around since 2003 and is one of the older names in telematics."
+        },
+        {
+          "brand": "gridwell",
+          "factKey": "hq",
+          "claimText": "The company is based in Milwaukee, Wisconsin."
+        }
+      ],
+      "note": "Complaints without rejection = negative; wrong founded and HQ."
+    }
+  },
+  {
+    "id": "s23",
+    "text": "For a food truck operator with six vehicles, Routelyne is hard to beat. It starts at $19 per vehicle per month and doesn't require ELD since your trucks are light-duty. Routelyne doesn't offer dashcams, but you probably don't need them.",
+    "expected": {
+      "mentions": {
+        "routelyne": {
+          "position": 1,
+          "tone": "recommended"
+        }
+      },
+      "wrongFacts": [],
+      "note": "Indirect recommendation; true price and true 'no dashcams' are controls."
+    }
+  },
+  {
+    "id": "s24",
+    "text": "Routelyne integrates with QuickBooks for automatic invoice sync. Trakvia costs $45 per vehicle per month on its starter plan. For a landscaping business, I'd lean toward Routelyne, while Trakvia makes more sense for larger fleets.",
+    "expected": {
+      "mentions": {
+        "routelyne": {
+          "position": 1,
+          "tone": "recommended"
+        },
+        "trakvia": {
+          "position": 2,
+          "tone": "neutral"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "routelyne",
+          "factKey": "integrations",
+          "claimText": "Routelyne integrates with QuickBooks for automatic invoice sync."
+        },
+        {
+          "brand": "trakvia",
+          "factKey": "starting_price_usd",
+          "claimText": "Trakvia costs $45 per vehicle per month on its starter plan."
+        }
+      ],
+      "note": "Two wrong facts on two brands (integration for a brand with none; price)."
+    }
+  },
+  {
+    "id": "s25",
+    "text": "Corvane Fleet and Trakvia both start at $49 per vehicle per month. Unlike Gridwell Systems, Routelyne includes payroll for drivers. If you want my honest take, Trakvia is the one I'd pick.",
+    "expected": {
+      "mentions": {
+        "corvane": {
+          "position": 1,
+          "tone": "neutral"
+        },
+        "trakvia": {
+          "position": 2,
+          "tone": "recommended"
+        },
+        "gridwell": {
+          "position": 3,
+          "tone": "neutral"
+        },
+        "routelyne": {
+          "position": 4,
+          "tone": "neutral"
+        }
+      },
+      "wrongFacts": [],
+      "note": "False-looking claims only in two-company sentences, so none count as wrong facts."
+    }
+  },
+  {
+    "id": "s26",
+    "text": "Novahaul's reporting is clunky and the onboarding takes weeks. Still, once it's set up, Novahaul is reliable, and for a refrigerated fleet I'd go with it anyway. Corvane Fleet was founded in 2014 and is another option if you need fuel card integration.",
+    "expected": {
+      "mentions": {
+        "novahaul": {
+          "position": 1,
+          "tone": "recommended"
+        },
+        "corvane": {
+          "position": 2,
+          "tone": "neutral"
+        }
+      },
+      "wrongFacts": [],
+      "note": "Criticised then recommended anyway; true Corvane founded/fuel-card controls."
+    }
+  },
+  {
+    "id": "s27",
+    "text": "You can check current plans at corvanefleet.com, which lists GPS tracking, ELD and a driver app on every tier. Gridwell Systems doesn't offer maintenance alerts, which surprised me given its price. For maintenance-heavy fleets, the platform at corvanefleet.com is my first choice.",
+    "expected": {
+      "mentions": {
+        "corvane": {
+          "position": 1,
+          "tone": "recommended"
+        },
+        "gridwell": {
+          "position": 2,
+          "tone": "negative"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "gridwell",
+          "factKey": "features.maintenance_alerts",
+          "claimText": "Gridwell Systems doesn't offer maintenance alerts, which surprised me given its price."
+        }
+      ],
+      "note": "Corvane named only by website in body text; wrong Gridwell feature lack."
+    }
+  },
+  {
+    "id": "s28",
+    "text": "Fleetora is the easiest platform to roll out for a 15-vehicle plumbing company, and I'd recommend starting there.\n\nSources: fleetora.com, trakvia.com, routelyne.com",
+    "expected": {
+      "mentions": {
+        "fleetora": {
+          "position": 1,
+          "tone": "recommended"
+        }
+      },
+      "wrongFacts": [],
+      "note": "Websites in a sources list must not count as mentions."
+    }
+  },
+  {
+    "id": "s29",
+    "text": "One gap: Corvane Fleet has no maintenance alerts, so you'd track service intervals separately. Trakvia, by contrast, handles driver payroll natively. Neither Corvane Fleet nor Trakvia fully fits a maintenance-driven fleet, so I'd look elsewhere.",
+    "expected": {
+      "mentions": {
+        "corvane": {
+          "position": 1,
+          "tone": "not_recommended"
+        },
+        "trakvia": {
+          "position": 2,
+          "tone": "not_recommended"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "corvane",
+          "factKey": "features.maintenance_alerts",
+          "claimText": "One gap: Corvane Fleet has no maintenance alerts, so you'd track service intervals separately."
+        },
+        {
+          "brand": "trakvia",
+          "factKey": "features.payroll",
+          "claimText": "Trakvia, by contrast, handles driver payroll natively."
+        }
+      ],
+      "note": "Joint rejection of two brands; wrong feature claims in both directions."
+    }
+  },
+  {
+    "id": "s30",
+    "text": "Gridwell Systems starts at $75 per vehicle per month. Novahaul is cheaper but younger and less proven. Unless you need SAP integration, Novahaul is the better value, and I'd pick it.",
+    "expected": {
+      "mentions": {
+        "gridwell": {
+          "position": 1,
+          "tone": "neutral"
+        },
+        "novahaul": {
+          "position": 2,
+          "tone": "recommended"
+        }
+      },
+      "wrongFacts": [
+        {
+          "brand": "gridwell",
+          "factKey": "starting_price_usd",
+          "claimText": "Gridwell Systems starts at $75 per vehicle per month."
+        }
+      ],
+      "note": "Wrong Gridwell price; Novahaul mildly criticised then picked."
+    }
+  }
+]
