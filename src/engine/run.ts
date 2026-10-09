@@ -26,6 +26,8 @@ export interface ClaimRow extends Claim {
 export interface AnsweredQuestion extends Answer {
   prompt: Prompt;
   hits: Hit[];
+  /** False when the answer has no AI tool or question id, so it can't be placed in a week. */
+  placed: boolean;
 }
 
 export interface Results {
@@ -44,8 +46,14 @@ export function runPack(pack: Pack): Results {
   const claims: ClaimRow[] = [];
   for (const a of pack.answers) {
     const r = a.ok ? analyse(a.text, pack.settings) : null;
+    // Unplaceable answers still get their rows in the exports, but a null week
+    // keeps them out of every week, so they can't invent a week, an AI tool
+    // column or a question nobody asked.
+    const placed = a.week !== null && a.engine !== "unknown" && a.promptId !== "";
     answers.push({
       ...a,
+      week: placed ? a.week : null,
+      placed,
       prompt: pack.prompts[a.promptId] ?? unknownPrompt(a.promptId),
       hits: r?.hits ?? [],
     });

@@ -9,7 +9,9 @@ import {
   weekHealth,
   weekRanges,
 } from "./health";
+import { mentionsCsv } from "./export";
 import { loadAnswers } from "./ingest";
+import { expectedFor, score } from "./score";
 
 const jsonl = (rows: object[]) => rows.map((r) => JSON.stringify(r)).join("\n");
 const usual = (id: string, week: number, extra: object = {}) => ({
@@ -154,5 +156,22 @@ describe("trackedCompanies", () => {
     expect(corvane.spellings).toContain("Corvain");
     expect(corvane.spellings).not.toContain("Corvane Fleet");
     expect(groups[1]!.companies.map((c) => c.key)).toEqual(["trakvia", "routelyne", "gridwell"]);
+  });
+});
+
+describe("answers that can't be placed in a week", () => {
+  // Regression: a line like {"week":7} with no AI tool or question invented a
+  // week 7 that "expected" 128 answers and became the default week.
+  const res = results([
+    ...fullWeek(1, ["chatgpt"], "Corvane is a strong pick."),
+    [7, "", "", 1, ""],
+  ]);
+
+  it("keeps them in the exports but out of every week", () => {
+    const sc = score(res);
+    expect(sc.weeks).toEqual([1]);
+    expect(expectedFor(res, 7).engines).toEqual(["chatgpt"]);
+    expect(mentionsCsv(res).trim().split("\n")).toHaveLength(1 + 5 * 6);
+    expect(packTotals(res)).toMatchObject({ kept: 5, scored: 4, unplaced: 1 });
   });
 });

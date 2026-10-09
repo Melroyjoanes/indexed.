@@ -17,6 +17,7 @@ export interface PackTotals {
   kept: number; // answers after duplicates and unreadable lines are dropped
   failed: number; // kept, but the request errored or came back empty
   scored: number;
+  unplaced: number; // kept, but missing a week, AI tool or question id
 }
 
 export function packTotals(res: Results): PackTotals {
@@ -28,7 +29,8 @@ export function packTotals(res: Results): PackTotals {
     unreadable: r.unreadable,
     kept: res.answers.length,
     failed: r.failed.length,
-    scored: res.answers.filter((a) => a.ok).length,
+    scored: res.answers.filter((a) => a.ok && a.placed).length,
+    unplaced: res.answers.filter((a) => !a.placed).length,
   };
 }
 
