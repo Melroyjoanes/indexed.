@@ -4,7 +4,7 @@ A weekly view of how ChatGPT, Perplexity and Google AI Overviews talk about Corv
 
 **Live:** https://indexed-corvane.vercel.app
 
-Everything runs on a normal laptop. No paid APIs, no API keys, and the same input always gives the same output.
+Analysis runs locally and needs no API keys or paid services; the same input always gives the same output. The hosted demo uses server-side credentials only to retrieve the supplied data pack.
 
 ---
 
@@ -35,7 +35,7 @@ npm run accuracy     # prints the accuracy check below
 npm run check        # lint, type check and the 301 tests
 ```
 
-**A new week** is just another file. Drop `week7.jsonl` into `data/` and it's picked up on the next page load, or upload it on the Data page to try it in your browser first. Field names, engine names and date formats that differ between exports are handled, so small format changes don't need code changes.
+**A new week** is just another file. Drop `week7.jsonl` into `data/` and it's picked up on the next page load, or upload it on the Data page to try it in your browser first. Supported field aliases, AI tool names and date formats are normalised automatically. Structures the loader doesn't recognise are reported on the Data page and left out of scores; supporting a genuinely new export format needs a parser update.
 
 ---
 
@@ -65,9 +65,17 @@ The week is picked once, in the header, and every screen follows it. Nothing aft
 
 **The score** (`src/engine/score.ts`). From 0 to 100: recommended 100, mentioned 50, criticised 20, advised against or missing 0, a little less when not named first. It's averaged across every question and AI tool, and the questions closest to a purchase count three times as much. I chose this over a mention count because a mention can hurt: "Routelyne is cheap but support is slow" is still a mention.
 
-**Real change or noise.** Each question was asked twice per AI tool per week, and the two answers often differ. That difference is the yardstick: a change only counts as clear when it's more than twice the usual gap between two runs. Weeks are compared only on the questions and AI tools both have, so week 5's missing Perplexity answers don't look like a drop. Week to week, nothing in this data is a clear change. Since week 3, though, Corvane is down 12 points (47 to 35), which is.
+**Real change or noise.** Each question was asked twice per AI tool per week, and the two answers often differ. That difference is the yardstick: a change only counts as clear when it's more than twice the usual gap between two runs. Weeks are compared only on the questions and AI tools both have, so week 5's missing Perplexity answers don't look like a drop. Week to week, nothing in this data is a clear change. Since week 3, though, Corvane is down 12 points (47 to 35), which is a clear change.
 
 Companies, spellings, look-alikes, AI tool names and score weights all live in `config/tracker.json`. Adding a competitor is a config change. The field names the loader accepts are structural and live in code (`FIELDS` in `src/engine/ingest.ts`).
+
+---
+
+## Architecture and stack choice
+
+The analysis engine (`src/engine/`) is plain TypeScript with no UI code. The same functions run in the browser (so an uploaded week is analysed in the visitor's tab), on the server and in the command-line export, so there is one implementation of every rule, and the dashboard and the scoring files come from the same code. Next.js provides the interface and deploys to Vercel.
+
+The workload is reading files, matching text and calculating scores, so it doesn't need Python's machine-learning ecosystem today. Python would also have been a reasonable choice; I'd add it behind a documented service if a local model proved worthwhile.
 
 ---
 
@@ -79,13 +87,13 @@ The brief says the scoring files are checked against an answer key, on data we h
 2. **Proof before interface.** The export, the accuracy checks and a regression lock (a fingerprint of both scoring files that fails the tests if any row changes) went in before any UI work, so no screen can quietly change a number.
 3. **The score and Marcus's weekly view**, because that's the core of what he asked for.
 4. **The stretch items, built in parallel** once the engine was stable: Priya's question view, head-to-head, competitor facts, sources, the board report, the method page and uploads.
-5. **Deployment and docs last**, so every number here is final.
+5. **Deployment and documentation** followed validation of the analysis engine and exports.
 
-The commit history follows this order. Each change went in as a pull request that had to pass CI before merging.
+The commit history follows this order. Changes were delivered through pull requests with CI checks; after an early merge went in before its check had registered, every later merge waited for checks to complete successfully.
 
 **What I chose not to do**
 
-- **No AI model for tone, after testing one.** I tried two small models that run locally for free (DeBERTa and MobileBERT, via transformers.js) as a second opinion for sentences the rules can't judge. They read plain mentions as recommendations ("Trakvia is another option" came back as recommended with 74% confidence), and those are exactly the sentences they'd be asked about, so accuracy would have gone down. A larger local model through Ollama would likely do better, but needs a separate install and gives answers that vary between runs, which makes accuracy hard to report honestly. It stays the next step, tested against the same checks before it's switched on.
+- **No AI model for tone, after testing one.** I tried two small models that run locally for free (DeBERTa and MobileBERT, via transformers.js) as a second opinion for sentences the rules can't judge. They read plain mentions as recommendations ("Trakvia is another option" came back as recommended with 74% confidence), and those are exactly the sentences they'd be asked about, so accuracy would have gone down. A larger local model is the next thing to evaluate, but it would need benchmarking against the same held-out checks before adoption, plus a separate install and fixed settings so results can be reproduced.
 - **No logins or database.** Not needed to use it, and they get in the way of "open it and use it".
 - **No collection from the AI tools.** The brief provides the answers.
 
@@ -149,80 +157,44 @@ These are small samples, so they show the kind of mistakes to expect rather than
 
 ## How I used AI tools
 
-I built this with Claude Code. I set the product requirements, made the decisions on scope, stack, scoring and what to leave out, and steered the work through prompts. Claude wrote the code, the tests and first drafts of the docs. The stretch screens were built by four Claude sub-agents in parallel, each in its own copy of the repo and branch, then reviewed and merged one by one.
+I built this with Claude Code. I set the product requirements, made the decisions on scope, stack, scoring and what to leave out, and reviewed the results. Claude wrote the code, the tests and first drafts of the docs; the stretch screens were built by Claude sub-agents on separate branches and merged one at a time. An independent AI review (OpenAI Codex) audited the code and live flows, and its findings were filed as issues and fixed through the same pull-request process.
 
 Things that went wrong and were caught:
 
-- **A setup tool pulled in a package called `cn`.** It was checked before trusting it (it's published by the shadcn team). The same tool installed its own command-line package as an app dependency, which carried a high-severity audit warning, so it was moved to dev-only.
-- **A loose regular expression** in a feature-claim rule turned up in a line-by-line review. It was tightened, and the row-by-row comparison showed no result changed.
-- **Next.js 16 rejected the first layout** because of its new caching model. It was rebuilt the documented way, with data read inside a Suspense boundary.
-- **A pull request was merged before CI had registered its check.** CI was green, but from then on a helper waited for checks to exist and pass before merging.
-- **All four parallel agents hit a usage limit mid-task** and were resumed where they stopped.
-- **Reviewing the screens together found real bugs.** With no data loaded there was no way to upload any. AI tools were listed in a different order on two screens. Phones had no company switch. All fixed in #12.
-- **The first tone accuracy on new wording looked better than it was**, because the rules had been tuned on those same sentences. A fresh, untuned set gave 5 / 12 at the time. Each later fix was measured on a new set written before the fix was run, since a set stops being fresh once it has been looked at.
-- **A test week uploaded through the app exposed missed direct advice** ("choose X") and a negation bug: "isn't" was never recognised, because there's no word boundary inside a contraction. Both fixed, with unit tests.
+- **Negation was misread.** "isn't something I'd suggest" was never recognised, because there's no word boundary inside a contraction, and "helps avoid outages" read as advice against the company. Both were fixed with tests that pin the corrected behaviour.
+- **Evaluation contamination.** The first tone accuracy on new wording looked better than it was, because the rules had been tuned on those same sentences. Each later change was measured on a set written before it was run, since a set stops being fresh once it has been looked at.
+- **History could be rewritten.** Adding a later week changed the run-to-run variation estimate, and with it an earlier week's "clear change" verdict. The estimate now uses only weeks up to the report week, and a test checks that appending a week leaves an earlier report unchanged.
+- **Exported evidence didn't match the source.** `claim_text` came from a cleaned copy of the answer, so footnotes and HTML entities were lost. The export now maps each claim back to the raw answer, tested end to end.
+- **Unvalidated input could look like a clean result.** An empty `facts.json` hid every wrong fact, and answer text sent as an object was scored as an answer naming nobody. Both are now rejected or set aside, with tests.
+- **A dependency carried a high-severity audit warning.** A setup tool installed its own CLI as an app dependency; it was moved to dev-only.
 
 ---
 
 ## Running this every day for 20 clients (proposed)
 
-This is a design, not something built here. The repository analyses answers it's given; it doesn't collect them.
+A design, not something built here: the repository analyses answers it's given and doesn't collect them.
 
-**What gets collected, and how.** The brief measures what buyers see in three consumer products, and a model API is not the same thing as the product. So each AI tool needs its own route, chosen to stay as close as possible to what a buyer sees:
+**Collection.** The brief measures consumer products, and a model API isn't the same thing. ChatGPT would be collected through the OpenAI API with web search (closest available match, spot-checked against the app), Perplexity through its own API, and Google AI Overviews through a search-results provider or a headless browser, since there's no official API. Each answer records its route, so a change of route isn't mistaken for a change in the market.
 
-| AI tool             | What buyers see                               | Collection route                                                                                                                                                                          |
-| ------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ChatGPT             | The ChatGPT app answering with web search     | The OpenAI API with web search turned on. Closest available match, not identical to the app; checked weekly against a few answers taken by hand.                                          |
-| Perplexity          | Perplexity's answer with citations            | Perplexity's own API, which returns answers and citations from its search.                                                                                                                |
-| Google AI Overviews | The AI Overview above Google's search results | No official API. A search-results provider that returns the AI Overview block, or a headless browser. Not every search shows an Overview, so "none shown" is recorded as its own outcome. |
+**Workload and cost.** 15 questions × 3 AI tools × 2 runs = 90 requests per client per day, 1,800 for 20 clients, about 54,000 a month. Cost is dominated by collection: `54,000 × (1 + retry rate) × cost per answer`, plus storage, database, jobs and monitoring. At an assumed $0.01 to $0.03 per answer that's $540 to $1,620 a month before retries; the per-answer price should be quoted per route first. Storage and analysis are small: sample answers average about 680 bytes (about 450 MB a year for 20 clients), and all 510 sample answers are analysed in about 0.1 seconds.
 
-Each answer is stored with the route it came from, so a change of route shows up as a change in the data rather than in the market.
+**Operation.** One scheduled job per client per day writes raw answers once, unchanged, to client-scoped storage keyed by client, date, AI tool, question and run, so retries are idempotent and any day can be re-run after a parser or rule fix. Client-scoped storage, access policies and isolation tests would enforce separation between tenants. Responses in an unrecognised shape are quarantined with an alert instead of being scored, and an alert also fires when the share of answers naming no company spikes, which usually means the text has moved to a field we're not reading.
 
-**Workload.** 15 questions × 3 AI tools × 2 runs = 90 requests per client per day, 1,800 a day for 20 clients, about 54,000 a month.
-
-**Cost**, as a formula to fill in with real quotes:
-
-```
-monthly ≈ 54,000 × (1 + retry rate) × cost per collected answer
-        + storage + database + scheduled jobs + monitoring
-```
-
-- **Cost per collected answer** depends on the route and is the number to get quoted first. Each $0.01 per answer adds about $540 a month at this volume, so $0.01 to $0.03 is $540 to $1,620, before retries.
-- **Retries:** plan for 10% (failed requests showed up in the sample pack), so multiply by 1.1.
-- **Storage** is small. Raw answers in the sample pack average about 680 bytes, so 1,800 a day is about 1.2 MB a day, or 450 MB a year. Results are 540 rows per client per day, roughly 4 million rows a year for 20 clients.
-- **Compute** is small too. Analysing and scoring all 510 sample answers takes about 0.1 seconds on a laptop, so analysis isn't a meaningful cost. The bigger compute cost is the headless browser, if that's the route for Google.
-- **Monitoring and alerts** fit the free or entry tiers of most hosted tools at this size.
-
-**How it would run.**
-
-- **Tenant isolation.** Each client has its own folder of raw files and its own rows, keyed by client id, with database row-level security, so one client's data can never appear in another's dashboard.
-- **Raw files are immutable.** Every answer is written once, exactly as received, to `raw/<client>/<date>/<engine>/<prompt>-<run>.json`, and never edited. Everything else is derived from them.
-- **Retention.** Raw files are kept for as long as the client contract says (assumed 24 months), then deleted; derived results can be rebuilt from what's kept.
-- **Idempotent retries.** The file path above is the job's key, so a retried request overwrites nothing and a rerun of a finished day does nothing.
-- **Schema versions.** Each raw file records the route and the format version of the response. The loader reads by version.
-- **Quarantine.** A response in a shape the loader doesn't recognise (no text field, an unknown engine name) is set aside with an alert instead of being scored as "not mentioned", so a format change can't look like a drop in visibility.
-- **Replay.** Once the loader or a rule is fixed, the affected days are re-run from the raw files, and the result tables are replaced for those days only.
-
-**When an AI tool changes its format.** It already happened in this data (week 4). There are two kinds of alias, kept in different places:
-
-- **Company and AI tool names** (`"Corvain"`, `"AI Overview"`) are configuration, in `config/tracker.json`. Adding one needs no code.
-- **Field names** (`response_text` vs `answer`, `run` vs `run_number`) are structural and live in code, in `FIELDS` in `src/engine/ingest.ts`. Adding one is a one-line code change with a test.
-
-Alerts fire when unreadable or empty answers jump, or when the share of answers naming no company at all spikes, which usually means the text has moved to a field we're not reading.
+**Format changes** happened in this data (week 4). Company and AI tool aliases are configuration (`config/tracker.json`); field-name aliases are structural and live in code (`FIELDS` in `src/engine/ingest.ts`), so adding one is a small code change with a test.
 
 ---
 
-## Hosting
+## Deployment architecture
 
-The live version runs on Vercel. It reads the data pack at request time from a private Supabase Storage bucket, using these server-only environment variables:
+The hosted demo runs on Vercel. Server-side code retrieves the supplied data files from a private Supabase Storage bucket, keeping them out of the public repository; if the bucket can't be read, every screen says so rather than showing partial data. Browser uploads are temporary and never modify the saved dataset. Local development reads `data/` and needs no hosted services.
 
 | Variable              | What it is                                                  |
 | --------------------- | ----------------------------------------------------------- |
 | `SUPABASE_URL`        | The Supabase project URL                                    |
-| `SUPABASE_SECRET_KEY` | A secret key with read access to Storage                    |
+| `SUPABASE_SECRET_KEY` | A server-only secret key with read access to Storage        |
 | `SUPABASE_BUCKET`     | Optional. The bucket holding the pack (default `data-pack`) |
 
-To set it up: create a private bucket, upload the four data-pack files to its root, and add the variables in the Vercel project settings (or with `vercel env add`). The key never reaches the browser, and no secret is stored in this repository. Uploads on the Data page stay in the visitor's browser tab. Running locally needs none of this: without the variables, the app reads `data/`.
+To set it up, create a private bucket, upload the four data-pack files to its root, and add the variables in the Vercel project settings. No secret is stored in this repository. The private bucket protects the source files only: the demo dashboard itself is public and has no client authentication or access control.
 
 ---
 
