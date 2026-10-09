@@ -232,5 +232,6 @@ If the tool needed to handle more varied language while staying fully local, I w
 For broken or incomplete files, I would improve validation and support documented format variations, with clear messages explaining what needs fixing. I would preserve the original answers rather than rewrite them or guess missing information.
 
 As more representative data became available, I would build a human-labelled dataset covering the mistakes we actually see. That would help me compare better rules, a small trained classifier and model-assisted analysis. I would keep a separate test set untouched and report both improvements and remaining errors.
+---
 
 © 2026 Melroy Joanes. Written as a case study for Indexed's AI-Native Developer application;
